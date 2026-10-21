@@ -225,10 +225,10 @@ Busca los `TODO S1` / `TODO S2` en el código.
 - [x] `infrastructure/bootstrap.py`: conectar todo
 
 **S2 · contra Foundry con api_key** (tag `t1-s2`)
-- [ ] `.env` apuntando a tu recurso de Foundry; las 5 conversaciones contra el modelo real
-- [ ] Historial por sesión, sin guardar turnos fallidos
-- [ ] `domain/errors.py`: timeout, rate limit y salida inválida → HTTP 504 / 429 / 502
-- [ ] `Usage`: latencia y tokens por turno
+- [x] `.env` apuntando a tu recurso de Foundry; las 5 conversaciones contra el modelo real
+- [x] Historial por sesión, sin guardar turnos fallidos
+- [x] `domain/errors.py`: timeout, rate limit y salida inválida → HTTP 504 / 429 / 502
+- [x] `Usage`: latencia y tokens por turno
 
 **Autónomo:** pytest con 5 conversaciones de prueba; latencia y tokens anotados aquí.
 
