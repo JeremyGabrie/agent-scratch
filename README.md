@@ -28,7 +28,7 @@ copy .env.example .env
 | `FOUNDRY_API_KEY` | cualquier valor (`fake-token`) | vacío | token de Cloud Shell (dura 60–90 min) |
 
 Con `entra_id`, el agente usa `DefaultAzureCredential`: en local toma tu `az login` y desplegado, la Managed Identity.
-El token se renueva solo y no hay ningún secreto en `.env`. `FOUNDRY_AUTH_PROVIDER` es obligatorio: no tiene valor por defecto, así que siempre se define en `.env`.
+El token se renueva solo y no hay ningún secreto en `.env`. Desde la sesión 2, `settings.py` usa `entra_id` por defecto si `FOUNDRY_AUTH_PROVIDER` no está definido; `api_key` se elige en `.env`.
 La alternativa es para quien no pueda instalar Azure CLI. Se genera en el portal: Cloud Shell → `az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv`.
 Las keys fijas del recurso no vencen, así que no se usan en el workshop.
 
@@ -237,10 +237,10 @@ Busca los `TODO S1` / `TODO S2` en el código.
 - [x] `infrastructure/bootstrap.py`: conectar todo
 
 **S2 · contra Foundry con Entra ID** (tag `t1-s2`)
-- [ ] `az login` y `.env` con `entra_id` apuntando a tu recurso de Foundry; las 5 conversaciones contra el modelo real
-- [ ] Historial por sesión, sin guardar turnos fallidos
-- [ ] `domain/errors.py`: timeout, rate limit y salida inválida → HTTP 504 / 429 / 502
-- [ ] `Usage`: latencia y tokens por turno
+- [x] `az login` y `.env` con `entra_id` apuntando a tu recurso de Foundry; las 5 conversaciones contra el modelo real
+- [x] Historial por sesión, sin guardar turnos fallidos
+- [x] `domain/errors.py`: timeout, rate limit y salida inválida → HTTP 504 / 429 / 502
+- [x] `Usage`: latencia y tokens por turno
 
 **Autónomo:** pytest con 5 conversaciones de prueba; latencia y tokens anotados aquí.
 
