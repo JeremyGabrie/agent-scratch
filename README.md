@@ -229,12 +229,12 @@ Regla: `infrastructure → application → domain`, nunca al revés.
 Busca los `TODO S1` / `TODO S2` en el código.
 
 **S1 · contra el mock** (tag `t1-s1`)
-- [ ] `domain/models.py`: `AgentReply` como contrato del structured output
-- [ ] `infrastructure/llm/credentials.py`: credencial según `FOUNDRY_AUTH_PROVIDER`
-- [ ] `infrastructure/llm/foundry_chat_model.py`: `complete()` con `chat.completions.parse`
-- [ ] `application/chat_service.py`: `handle()` con system prompt + historial + mensaje
-- [ ] `infrastructure/api/`: `ChatRequest`, `ChatResponse` y `POST /chat`
-- [ ] `infrastructure/bootstrap.py`: conectar todo
+- [x] `domain/models.py`: `AgentReply` como contrato del structured output
+- [x] `infrastructure/llm/credentials.py`: credencial según `FOUNDRY_AUTH_PROVIDER`
+- [x] `infrastructure/llm/foundry_chat_model.py`: `complete()` con `chat.completions.parse`
+- [x] `application/chat_service.py`: `handle()` con system prompt + historial + mensaje
+- [x] `infrastructure/api/`: `ChatRequest`, `ChatResponse` y `POST /chat`
+- [x] `infrastructure/bootstrap.py`: conectar todo
 
 **S2 · contra Foundry con Entra ID** (tag `t1-s2`)
 - [ ] `az login` y `.env` con `entra_id` apuntando a tu recurso de Foundry; las 5 conversaciones contra el modelo real
