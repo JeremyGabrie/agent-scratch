@@ -72,6 +72,18 @@ uv run uvicorn agent.infrastructure.bootstrap:create_app --factory --reload
 
 Con el token temporal (`api_key`), el token solo vive en tu `.env`, que no se versiona. No lo pegues en el código, en el chat ni en un commit.
 
+### Sesión 3 · Ingesta del corpus
+
+El corpus del dominio va en `data/corpus/<DOMAIN>/`, con su `manifest.json`. Lo entrega plataforma (Blob) o se copia de la carpeta `w02-s03-ingesta/corpus` del repo de labs.
+`data/` no se versiona. Para iterar sin Azure, el mock de Foundry también responde embeddings.
+
+```bash
+uv run ingest build      # corpus -> chunks + vectores -> data/chunks/<DOMAIN>.json
+uv run ingest publish    # data/chunks/<DOMAIN>.json -> índice local data/index/<DOMAIN>.json
+```
+
+`build` es el punto de control: el JSON que genera es exactamente lo que se publica, hoy en el índice local y en la S5 en AI Search.
+
 ## Más adelante · contenedor y Azure
 
 Fuera de la semana 1: los mismos dos backends, ahora en Docker y luego en Azure.
@@ -203,15 +215,20 @@ src/agent/
 ├── domain/            reglas y contratos; no importa nada externo
 │   ├── models.py      Intent, Message (+ AgentReply, Usage, AgentTurn)
 │   ├── errors.py      fallas del agente
-│   └── ports.py       interfaces: ChatModel, ConversationStore
+│   ├── knowledge.py   SourceDocument, Chunk (esquema del índice)
+│   └── ports.py       interfaces: ChatModel, ConversationStore, Embedder, KnowledgeBase
 ├── application/       casos de uso; solo conocen los puertos
-│   └── chat_service.py
+│   ├── chat_service.py
+│   ├── chunker.py     chunking por secciones de Markdown
+│   └── ingest_corpus.py
 └── infrastructure/    todo lo que toca el mundo exterior
     ├── api/           FastAPI (entrada HTTP)
-    ├── llm/           ChatModel → Microsoft Foundry + credenciales api_key | entra_id
+    ├── llm/           ChatModel y Embedder → Microsoft Foundry + credenciales api_key | entra_id
+    ├── ingestion/     loaders por formato (PDF, DOCX, HTML, CSV, MD) y CLI `ingest`
+    ├── search/        KnowledgeBase → índice local (S3–S4); Azure AI Search (S5)
     ├── persistence/   ConversationStore → memoria
     ├── prompts/       system prompt por dominio
-    ├── config/        settings (FOUNDRY_*)
+    ├── config/        settings (FOUNDRY_*, INGEST_*)
     └── bootstrap.py   conecta cada puerto con su implementación
 ```
 
@@ -220,7 +237,7 @@ Regla: `infrastructure → application → domain`, nunca al revés.
 | Tema | domain | application | infrastructure |
 |---|---|---|---|
 | T1 Conversa | `AgentReply`, `Usage`, `AgentError` | `ChatService` | `api/`, `llm/` Foundry, `persistence/` memoria |
-| T2 Sabe | `Citation`, puerto `KnowledgeBase` | recuperar contexto | `search/` AI Search |
+| T2 Sabe | `Chunk`, `Citation`; puertos `Embedder`, `KnowledgeBase` | `IngestCorpus`, chunker, recuperar contexto | `ingestion/`, `search/` local y AI Search |
 | T3 Actúa | `PendingAction`, puerto `ToolGateway` | `ApproveAction` | `mcp/`, Agent Framework en `llm/` |
 | T4 Opera | — | — | Cosmos DB en `persistence/`, `telemetry/` |
 
@@ -245,6 +262,20 @@ Busca los `TODO S1` / `TODO S2` en el código.
 **Autónomo:** pytest con 5 conversaciones de prueba; latencia y tokens anotados aquí.
 
 **Gate T1:** `/chat` responde con output válido, tests en verde y 2 trade-offs de modelo y costo explicados.
+
+## Semana 2 · T2 Sabe
+
+**S3 · Ingesta** (tag `t2-s3`)
+- [x] `domain/knowledge.py`: `SourceDocument` y `Chunk` con el esquema del índice
+- [x] `domain/ports.py`: `Embedder` y `KnowledgeBase`
+- [x] `infrastructure/ingestion/loaders.py`: PDF, DOCX, HTML, CSV y MD → Markdown con títulos
+- [x] `application/chunker.py`: chunks por sección, tablas con encabezado, ids determinísticos
+- [x] `application/ingest_corpus.py` + `infrastructure/llm/foundry_embedder.py`: embeddings por lotes
+- [x] `infrastructure/search/local_knowledge_base.py` + CLI `ingest build | publish`
+
+**S4 · Retrieval** (tag `t2-s4`)
+- [ ] Búsqueda vectorial (baseline), BM25 e híbrida con RRF sobre el índice local
+- [ ] Query rewriting con el historial y RAG en `/chat` con citas
 
 ## Ramas y tags
 
