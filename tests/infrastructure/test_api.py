@@ -1,17 +1,19 @@
 from uuid import UUID
 
 import pytest
-from fakes import FailingChatModel, FakeChatModel
+from fakes import FailingChatModel, FakeChatModel, FakeEmbedder, FakeKnowledgeBase
 from fastapi.testclient import TestClient
 
 from agent.domain.errors import ErrorKind
+from agent.domain.knowledge import Chunk
 from agent.infrastructure.bootstrap import create_app
 from agent.infrastructure.config.settings import FoundrySettings, Settings
 
 
-def make_client(chat_model) -> TestClient:
+def make_client(chat_model, chunks: list[Chunk] | None = None) -> TestClient:
     settings = Settings(_env_file=None, foundry=FoundrySettings(_env_file=None, auth_provider="api_key"))
-    return TestClient(create_app(chat_model=chat_model, settings=settings))
+    app = create_app(chat_model=chat_model, settings=settings, embedder=FakeEmbedder(), knowledge_base=FakeKnowledgeBase(chunks))
+    return TestClient(app)
 
 
 # las 5 conversaciones de prueba del entregable de la semana 1
@@ -41,6 +43,12 @@ def test_chat_keeps_session_id():
     first = client.post("/chat", json={"message": "Hola"}).json()
     second = client.post("/chat", json={"session_id": first["session_id"], "message": "Gracias"}).json()
     assert second["session_id"] == first["session_id"]
+
+
+def test_chat_returns_citations():
+    plazos = Chunk(id="c1", content="Plazos", doc_type="reglamento", seccion="Reglamento > Plazos", fuente="reglamento.pdf")
+    body = make_client(FakeChatModel(fuentes=[1]), chunks=[plazos]).post("/chat", json={"message": "¿Plazo?"}).json()
+    assert body["citations"] == [{"fuente": "reglamento.pdf", "seccion": "Reglamento > Plazos", "chunk_id": "c1"}]
 
 
 @pytest.mark.parametrize(

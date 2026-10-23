@@ -3,7 +3,8 @@
 Uso:  uv run python dev/mock_foundry.py
 .env: FOUNDRY_ENDPOINT=http://127.0.0.1:8100  y  FOUNDRY_API_KEY=<cualquier valor>
 
-Chat: responde {"intent", "answer"} detectando la intención por palabras clave.
+Chat: responde {"intent", "answer", "fuentes"} detectando la intención por palabras clave; en consulta_producto
+cita el fragmento [1] del contexto. El rewrite devuelve la pregunta tal cual.
 Embeddings: vectores determinísticos por bolsa de palabras; textos con palabras en común quedan cerca.
 """
 
@@ -43,9 +44,17 @@ async def chat_completions(request: Request, authorization: str = Header(default
     _authorize(authorization)
 
     body = await request.json()
-    text = body["messages"][-1]["content"].lower()
-    intent = next((i for i, words in RULES if any(w in text for w in words)), "fuera_de_alcance")
-    content = json.dumps({"intent": intent, "answer": f"[mock] intención detectada: {intent}"}, ensure_ascii=False)
+    question = body["messages"][-1]["content"]
+    # el SDK manda el nombre del modelo Pydantic que espera como respuesta
+    if body.get("response_format", {}).get("json_schema", {}).get("name") == "SearchQuery":
+        data = {"query": question}  # ponytail: no reescribe de verdad; alcanza para probar el flujo
+    else:
+        text = question.lower()
+        intent = next((i for i, words in RULES if any(w in text for w in words)), "fuera_de_alcance")
+        has_context = any(message["role"] == "system" and "\n[1] " in message["content"] for message in body["messages"])
+        fuentes = [1] if intent == "consulta_producto" and has_context else []
+        data = {"intent": intent, "answer": f"[mock] intención detectada: {intent}", "fuentes": fuentes}
+    content = json.dumps(data, ensure_ascii=False)
     prompt_tokens = sum(len(str(m["content"]).split()) for m in body["messages"])
     completion_tokens = len(content.split())
     return {

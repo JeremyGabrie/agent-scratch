@@ -31,12 +31,16 @@ def show(status: int, reply: dict) -> str | None:
     """Imprime la respuesta y devuelve el session_id para el siguiente turno."""
     if status == 200:
         print(f"  Agente [{reply['intent']}]: {reply['answer']}")
+        if citations := reply.get("citations"):
+            print("  Fuentes:")
+            for number, citation in enumerate(citations, start=1):
+                print(f"   [{number}] {citation['fuente']} · {citation['seccion']}")
         if usage := reply.get("usage"):
             print(f"  ({usage['latency_ms']} ms, {usage['prompt_tokens']} tokens de entrada, {usage['completion_tokens']} de salida)")
         return reply["session_id"]
     detail = reply.get("detail")
     if isinstance(detail, list):  # 422: FastAPI explica qué campo no pasó la validación
-        detail = "; ".join(d.get("msg", str(d)) for d in detail)
+        detail = "; ".join(problem.get("msg", str(problem)) for problem in detail)
     kind = f" ({reply['error']})" if reply.get("error") else ""
     print(f"  Error {status}{kind}: {detail}")
     return None

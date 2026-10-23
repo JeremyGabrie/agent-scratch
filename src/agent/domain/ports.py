@@ -2,14 +2,20 @@
 
 from typing import Protocol
 
-from agent.domain.knowledge import Chunk
-from agent.domain.models import Message, ModelResult
+from agent.domain.knowledge import Chunk, SearchHit
+from agent.domain.models import Message, ModelResult, RewriteResult
 
 
 class ChatModel(Protocol):
     """Modelo de lenguaje. T1: Foundry directo; T3: Microsoft Agent Framework."""
 
     def complete(self, messages: list[Message]) -> ModelResult: ...
+
+
+class QueryRewriter(Protocol):
+    """Reescribe una pregunta de seguimiento para que se entienda sin el historial. S4: el mismo modelo de chat."""
+
+    def rewrite(self, messages: list[Message]) -> RewriteResult: ...
 
 
 class ConversationStore(Protocol):
@@ -26,10 +32,14 @@ class Embedder(Protocol):
 
 
 class KnowledgeBase(Protocol):
-    """Índice de conocimiento. S3: Qdrant en modo local; S5: Azure AI Search."""
+    """Índice de conocimiento. Qdrant en modo local o Azure AI Search, según KNOWLEDGE_BASE."""
 
     def publish(self, chunks: list[Chunk]) -> None:
         """Reemplaza todos los chunks de cada fuente publicada."""
         ...
 
     def count(self) -> int: ...
+
+    def search(self, text: str, vector: list[float], top_k: int) -> list[SearchHit]:
+        """Los top_k chunks vigentes más relevantes para la pregunta, del más al menos relevante."""
+        ...

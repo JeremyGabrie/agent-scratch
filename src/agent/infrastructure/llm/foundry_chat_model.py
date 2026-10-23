@@ -1,26 +1,19 @@
 import logging
 import time
 
-from azure.core.exceptions import ClientAuthenticationError
-from openai import (
-    APIError,
-    APITimeoutError,
-    ContentFilterFinishReasonError,
-    LengthFinishReasonError,
-    OpenAI,
-    RateLimitError,
-)
-from pydantic import ValidationError
+from openai import OpenAI
+from pydantic import BaseModel
 
 from agent.domain.errors import AgentError, ErrorKind
-from agent.domain.models import AgentReply, Message, ModelResult, Usage
+from agent.domain.models import AgentReply, Message, ModelResult, RewriteResult, SearchQuery, Usage
 from agent.infrastructure.llm.credentials import Credential
+from agent.infrastructure.llm.errors import foundry_errors
 
 log = logging.getLogger(__name__)
 
 
 class FoundryChatModel:
-    """Implementa el puerto ChatModel contra Microsoft Foundry (API v1 compatible con OpenAI)."""
+    """Implementa los puertos ChatModel y QueryRewriter contra Microsoft Foundry (API v1 compatible con OpenAI)."""
 
     def __init__(
         self,
@@ -30,7 +23,6 @@ class FoundryChatModel:
         timeout_s: float,
         max_retries: int,
     ) -> None:
-        # el SDK reintenta con backoff timeouts, 429 y 5xx; AgentError llega tras agotar reintentos
         self.client = OpenAI(
             base_url=f"{endpoint.rstrip('/')}/openai/v1/",
             api_key=credential,
@@ -40,25 +32,19 @@ class FoundryChatModel:
         self.deployment = deployment
 
     def complete(self, messages: list[Message]) -> ModelResult:
+        reply, usage = self._parse(messages, AgentReply)
+        return ModelResult(reply=reply, usage=usage)
+
+    def rewrite(self, messages: list[Message]) -> RewriteResult:
+        search, usage = self._parse(messages, SearchQuery)
+        return RewriteResult(query=search.query, usage=usage)
+
+    def _parse[Output: BaseModel](self, messages: list[Message], schema: type[Output]) -> tuple[Output, Usage]:
         start = time.perf_counter()
-        try:
+        with foundry_errors():
             completion = self.client.chat.completions.parse(
-                model=self.deployment, messages=messages, response_format=AgentReply
+                model=self.deployment, messages=messages, response_format=schema
             )
-        except APITimeoutError as e:
-            raise AgentError(ErrorKind.TIMEOUT, "Foundry no respondió a tiempo") from e
-        except RateLimitError as e:
-            raise AgentError(ErrorKind.RATE_LIMIT, "Foundry limitó las solicitudes (429)") from e
-        except LengthFinishReasonError as e:
-            raise AgentError(ErrorKind.INVALID_OUTPUT, "respuesta cortada por límite de tokens") from e
-        except ContentFilterFinishReasonError as e:
-            raise AgentError(ErrorKind.INVALID_OUTPUT, "respuesta bloqueada por el filtro de contenido") from e
-        except ValidationError as e:
-            raise AgentError(ErrorKind.INVALID_OUTPUT, "el modelo no devolvió el contrato esperado") from e
-        except ClientAuthenticationError as e:
-            raise AgentError(ErrorKind.UPSTREAM, "no se pudo obtener token de Entra ID (¿hiciste az login?)") from e
-        except APIError as e:
-            raise AgentError(ErrorKind.UPSTREAM, f"error de Foundry: {type(e).__name__}") from e
 
         message = completion.choices[0].message
         if message.parsed is None:
@@ -72,5 +58,5 @@ class FoundryChatModel:
             prompt_tokens=tokens.prompt_tokens if tokens else 0,
             completion_tokens=tokens.completion_tokens if tokens else 0,
         )
-        log.info("llm %s", usage.model_dump())
-        return ModelResult(reply=message.parsed, usage=usage)
+        log.info("llm %s %s", schema.__name__, usage.model_dump())
+        return message.parsed, usage

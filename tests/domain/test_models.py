@@ -8,16 +8,17 @@ from agent.domain.models import AgentReply, Intent, Usage
 def test_agent_reply_schema_is_strict():
     schema = to_strict_json_schema(AgentReply)
     assert schema["additionalProperties"] is False
-    assert set(schema["required"]) == {"intent", "answer"}
-    assert "description" in schema["properties"]["answer"]
+    assert set(schema["required"]) == {"intent", "answer", "fuentes"}
+    assert "description" in schema["properties"]["fuentes"]
 
 
 @pytest.mark.parametrize(
     "data",
     [
-        {"intent": "saludo", "answer": "   "},
-        {"intent": "saludo", "answer": "Hola", "extra": 1},
-        {"intent": "no_existe", "answer": "Hola"},
+        {"intent": "saludo", "answer": "   ", "fuentes": []},
+        {"intent": "saludo", "answer": "Hola", "fuentes": [], "extra": 1},
+        {"intent": "no_existe", "answer": "Hola", "fuentes": []},
+        {"intent": "saludo", "answer": "Hola"},
     ],
 )
 def test_agent_reply_rejects_invalid_output(data):
@@ -26,7 +27,7 @@ def test_agent_reply_rejects_invalid_output(data):
 
 
 def test_agent_reply_strips_answer():
-    assert AgentReply(intent=Intent.SALUDO, answer="  Hola  ").answer == "Hola"
+    assert AgentReply(intent=Intent.SALUDO, answer="  Hola  ", fuentes=[]).answer == "Hola"
 
 
 def test_usage_adds_up():

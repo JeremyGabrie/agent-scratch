@@ -37,7 +37,11 @@ def build_router(chat_service: ChatService) -> APIRouter:
         session_id = req.session_id or uuid4()
         turn = chat_service.handle(str(session_id), req.message)
         return ChatResponse(
-            session_id=session_id, intent=turn.reply.intent, answer=turn.reply.answer, usage=turn.usage
+            session_id=session_id,
+            intent=turn.reply.intent,
+            answer=turn.reply.answer,
+            usage=turn.usage,
+            citations=turn.citations,
         )
 
     return router

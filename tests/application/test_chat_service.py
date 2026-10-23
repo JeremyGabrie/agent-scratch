@@ -1,14 +1,27 @@
 import pytest
-from fakes import FailingChatModel, RecordingChatModel
+from fakes import FailingChatModel, FakeEmbedder, FakeKnowledgeBase, RecordingChatModel
 
 from agent.application.chat_service import ChatService
 from agent.domain.errors import AgentError, ErrorKind
+from agent.domain.knowledge import Chunk, Citation
 from agent.domain.models import Intent
 from agent.infrastructure.persistence.in_memory_store import InMemoryConversationStore
 
+PLAZOS = Chunk(id="c1", content="Plazos\n\nSe responde en 15 días.", doc_type="reglamento", seccion="Plazos", fuente="reglamento.pdf")
+CANALES = Chunk(id="c2", content="Canales\n\nApp y agencias.", doc_type="faq", seccion="Canales", fuente="canales.html")
 
-def make_service(model, max_turns: int = 10) -> ChatService:
-    return ChatService(model=model, store=InMemoryConversationStore(), system_prompt="SYS", max_turns=max_turns)
+
+def make_service(model, max_turns: int = 10, chunks: list[Chunk] | None = None) -> ChatService:
+    return ChatService(
+        model=model,
+        rewriter=model,
+        embedder=FakeEmbedder(),
+        knowledge_base=FakeKnowledgeBase(chunks),
+        store=InMemoryConversationStore(),
+        system_prompt="SYS",
+        max_turns=max_turns,
+        top_k=5,
+    )
 
 
 def roles(messages) -> list[str]:
@@ -28,7 +41,7 @@ def test_history_is_sent_on_next_turn():
     service.handle("s1", "Hola")
     service.handle("s1", "Me robaron la tarjeta")
 
-    assert roles(model.calls[1]) == ["system", "user", "assistant", "user"]
+    assert roles(model.calls[1]) == ["system", "user", "assistant", "system", "user"]
     assert model.calls[1][0]["content"] == "SYS"
     assert model.calls[1][1]["content"] == "Hola"
 
@@ -40,7 +53,7 @@ def test_sessions_are_isolated():
     service.handle("s1", "Hola")
     service.handle("s2", "Hola")
 
-    assert roles(model.calls[1]) == ["system", "user"]
+    assert roles(model.calls[1]) == ["system", "system", "user"]
 
 
 def test_history_is_trimmed_to_max_turns():
@@ -50,7 +63,7 @@ def test_history_is_trimmed_to_max_turns():
     for text in ("uno", "dos", "tres"):
         service.handle("s1", text)
 
-    assert [m["content"] for m in model.calls[2][1:-1]] == ["dos", "[fake] intención detectada: fuera_de_alcance"]
+    assert [m["content"] for m in model.calls[2][1:-2]] == ["dos", "[fake] intención detectada: fuera_de_alcance"]
 
 
 def test_failed_turn_is_not_saved():
@@ -64,4 +77,37 @@ def test_failed_turn_is_not_saved():
 
     service.model = model
     service.handle("s1", "Me robaron la tarjeta")
-    assert roles(model.calls[-1]) == ["system", "user", "assistant", "user"]
+    assert roles(model.calls[-1]) == ["system", "user", "assistant", "system", "user"]
+
+
+def test_context_numbers_the_chunks_found():
+    model = RecordingChatModel()
+    make_service(model, chunks=[PLAZOS, CANALES]).handle("s1", "¿Cuál es el plazo?")
+
+    context = model.calls[0][-2]["content"]
+    assert "[1] reglamento.pdf\nPlazos" in context
+    assert "[2] canales.html\nCanales" in context
+
+
+def test_without_chunks_the_model_is_told_there_is_no_context():
+    model = RecordingChatModel()
+    make_service(model).handle("s1", "¿Cuál es el plazo?")
+    assert model.calls[0][-2]["content"].startswith("No se encontraron fragmentos")
+
+
+def test_citations_come_only_from_fragments_that_exist():
+    model = RecordingChatModel(fuentes=[2, 7, 2])
+    turn = make_service(model, chunks=[PLAZOS, CANALES]).handle("s1", "¿Por dónde reclamo?")
+    assert turn.citations == [Citation(fuente="canales.html", seccion="Canales", chunk_id="c2")]
+
+
+def test_follow_up_question_is_rewritten_before_searching():
+    model = RecordingChatModel()
+    service = make_service(model)
+
+    service.handle("s1", "¿Cuál es el plazo de un reclamo?")
+    turn = service.handle("s1", "¿y si es fraude?")
+
+    assert service.knowledge_base.queries == ["¿Cuál es el plazo de un reclamo?", "[reescrita] ¿y si es fraude?"]
+    assert roles(model.rewrites[0]) == ["system", "user", "assistant", "user"]
+    assert turn.usage.llm_calls == 2
