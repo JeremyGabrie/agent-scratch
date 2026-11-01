@@ -49,12 +49,13 @@ class AzureSearchKnowledgeBase:
         with _search_errors():
             if not self._exists():
                 self.indexes.create_index(_index_definition(self.index, len(chunks[0].content_vector)))
-            sources = ",".join(sorted({chunk.source for chunk in chunks}))
-            old_documents = self.client.search(search_text="*", filter=f"search.in(source, '{sources}', ',')", select=["id"])
-            if old_ids := [{"id": document["id"]} for document in old_documents]:
-                self.client.delete_documents(old_ids)
             # ponytail: una sola carga; con más de 1000 chunks por publicación, usar SearchIndexingBufferedSender
             self.client.upload_documents([to_document(chunk) for chunk in chunks])
+            new_ids = {chunk.id for chunk in chunks}
+            sources = ",".join(sorted({chunk.source for chunk in chunks}))
+            old_documents = self.client.search(search_text="*", filter=f"search.in(source, '{sources}', ',')", select=["id"])
+            if stale := [{"id": document["id"]} for document in old_documents if document["id"] not in new_ids]:
+                self.client.delete_documents(stale)
 
     def count(self) -> int:
         with _search_errors():
