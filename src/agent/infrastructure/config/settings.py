@@ -23,6 +23,11 @@ class JudgeKind(StrEnum):
     AZURE_EVALUATION = "azure_evaluation"  # Microsoft-Decision-1
 
 
+class AgentRuntimeKind(StrEnum):
+    REACT = "react"  # el ciclo ReAct propio de S6, sobre FoundryChatModel
+    AGENT_FRAMEWORK = "agent_framework"  # S7: Microsoft Agent Framework conduce el turno
+
+
 class McpAuthProvider(StrEnum):
     STATIC = "static"  # token fijo de desarrollo (MCP_TOKEN): dev/mcp/mock_mcp.py
     ENTRA_ID = "entra_id"  # token de Entra ID para MCP_SCOPE: el MCP compartido
@@ -89,6 +94,7 @@ class Settings(_EnvSettings):
     max_turns: int = Field(10, ge=1)
     knowledge_base: KnowledgeBaseKind = KnowledgeBaseKind.LOCAL
     judge: JudgeKind = JudgeKind.LOCAL
+    agent_runtime: AgentRuntimeKind = AgentRuntimeKind.REACT
     foundry: FoundrySettings = Field(default_factory=FoundrySettings)
     ingest: IngestSettings = Field(default_factory=IngestSettings)
     search: SearchSettings = Field(default_factory=SearchSettings)
