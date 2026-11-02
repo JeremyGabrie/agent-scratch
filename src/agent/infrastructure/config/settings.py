@@ -43,7 +43,7 @@ class FoundrySettings(_EnvSettings):
     deployment: str = "gpt-5-mini"
     embedding_deployment: str = "text-embedding-3-small"
     judge_deployment: str = "gpt-5-mini"  # juez G-Eval: conviene otro modelo, para que no se califique a sí mismo
-    decision_deployment: str = "microsoft-decision-1"
+    decision_deployment: str = "decision-1"
     timeout_s: float = Field(30, gt=0)
     max_retries: int = Field(2, ge=0)
 

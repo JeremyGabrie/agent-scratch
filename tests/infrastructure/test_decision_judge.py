@@ -8,9 +8,9 @@ HIT = SearchHit(chunk=Chunk(id="c1", content="Plazos: 60 días.", doc_type="faq"
 
 
 def test_the_request_asks_three_questions_about_the_same_state():
-    body = decision_request("microsoft-decision-1", "¿Plazo?", [HIT], "60 días.", [Citation(source="faq.md", section="FAQ", chunk_id="c1")])
+    body = decision_request("decision-1", "¿Plazo?", [HIT], "60 días.", [Citation(source="faq.md", section="FAQ", chunk_id="c1")])
 
-    assert body["model"] == "microsoft-decision-1"
+    assert body["model"] == "decision-1"
     assert body["state"]["fragments"] == [{"number": 1, "source": "faq.md", "text": "Plazos: 60 días."}]
     assert body["state"]["cited_sources"] == ["faq.md"]
     assert {name: question["type"] for name, question in body["questions"].items()} == {
