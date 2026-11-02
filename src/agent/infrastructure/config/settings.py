@@ -70,7 +70,10 @@ class SearchSettings(_EnvSettings):
 
 
 class McpSettings(_EnvSettings):
-    """Variables MCP_*: el servidor de las tools. El mock local o el MCP compartido: solo cambia el .env."""
+    """Variables MCP_*: el servidor de las tools del agente. El mock local o el compartido: solo cambia el .env.
+
+    MCP_URL vacío: el agente responde solo con RAG, sin tools.
+    """
 
     model_config = SettingsConfigDict(env_prefix="MCP_")
 
