@@ -23,6 +23,11 @@ class JudgeKind(StrEnum):
     AZURE_EVALUATION = "azure_evaluation"  # Microsoft-Decision-1
 
 
+class McpAuthProvider(StrEnum):
+    STATIC = "static"  # token fijo de desarrollo (MCP_TOKEN): dev/mcp/mock_mcp.py
+    ENTRA_ID = "entra_id"  # token de Entra ID para MCP_SCOPE: el MCP compartido
+
+
 class _EnvSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore")
 
@@ -64,6 +69,20 @@ class SearchSettings(_EnvSettings):
     top_k: int = Field(5, ge=1, le=20)
 
 
+class McpSettings(_EnvSettings):
+    """Variables MCP_*: el servidor de las tools del agente. El mock local o el compartido: solo cambia el .env.
+
+    MCP_URL vacío: el agente responde solo con RAG, sin tools.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="MCP_")
+
+    url: str = "http://127.0.0.1:8200/mcp"
+    auth_provider: McpAuthProvider = McpAuthProvider.STATIC
+    token: SecretStr = SecretStr("")  # static: dev-<dominio>
+    scope: str = ""  # entra_id: el MCP_SCOPE de la ficha
+
+
 class Settings(_EnvSettings):
     # cada tema agrega su bloque: T2 ingest y search, T3 mcp, T4 cosmos y otel
     domain: str = "fraud"
@@ -73,3 +92,4 @@ class Settings(_EnvSettings):
     foundry: FoundrySettings = Field(default_factory=FoundrySettings)
     ingest: IngestSettings = Field(default_factory=IngestSettings)
     search: SearchSettings = Field(default_factory=SearchSettings)
+    mcp: McpSettings = Field(default_factory=McpSettings)
