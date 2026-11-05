@@ -2,13 +2,15 @@
 
 from typing import Protocol
 
-from agent.domain.models import Message, ModelResult
+from agent.domain.models import Message
 
 
 class ChatModel(Protocol):
     """Modelo de lenguaje. T1: Foundry directo; T3: Microsoft Agent Framework."""
 
-    def complete(self, messages: list[Message]) -> ModelResult: ...
+    # TODO S1: tipar el retorno: AgentReply
+    # TODO S2: ModelResult (respuesta tipada + consumo de la llamada)
+    def complete(self, messages: list[Message]): ...
 
 
 class ConversationStore(Protocol):
