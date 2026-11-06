@@ -21,3 +21,18 @@ En la conversación de prueba con `MAX_TURNS=4`, el usuario indicó su nombre al
 ## Enrutamiento por intención: `gpt-5-nano` y `gpt-5-mini`
 
 **Recomendación:** comparar ambas configuraciones con las mismas conversaciones etiquetadas. Medir exactitud por intención, errores especialmente en `sensitive_action`, latencia total y tokens/costo por conversación. Mantener el enrutamiento híbrido solo si nano cumple el umbral de calidad y produce un ahorro medible; si no, usar mini para clasificar o responder esas intenciones.
+
+## Comparación del tamaño de chunks
+
+| Tamaño máximo | Chunks generados |
+|---:|---:|
+| 250 caracteres | 30 |
+| 1500 caracteres | 28 |
+
+Con el límite de **250 caracteres** se obtuvieron 30 chunks; con **1500 caracteres**, 28. En este corpus la diferencia fue de 2 chunks, porque el chunker también organiza el contenido por secciones y no depende únicamente del límite de caracteres.
+
+**Qué se gana con chunks más pequeños:** cada fragmento tiende a tratar un tema más específico, lo que puede mejorar la precisión al recuperar información relevante para una pregunta concreta.
+
+**Qué se pierde:** al dividir más el contenido, una regla y su excepción pueden quedar en fragmentos distintos. Si se recupera solo uno, puede faltar contexto y la respuesta quedar incompleta.
+
+**Conclusión:** un tamaño menor favorece la precisión temática y uno mayor conserva más contexto en cada fragmento. Además de contar chunks, conviene evaluar las respuestas recuperadas, sobre todo cuando dependen de reglas, excepciones o condiciones.
