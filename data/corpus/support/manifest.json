@@ -1,0 +1,86 @@
+[
+  {
+    "source": "account-opening.md",
+    "doc_type": "procedure",
+    "product": "cuenta_ahorro",
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "app-faq.md",
+    "doc_type": "faq",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "branches-faq.md",
+    "doc_type": "faq",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "channels-and-hours.html",
+    "doc_type": "channel",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "contact-details-update.docx",
+    "doc_type": "procedure",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "general-faq-2023.md",
+    "doc_type": "faq",
+    "product": null,
+    "valid_from": "2023-01-01",
+    "valid_until": "2024-12-31"
+  },
+  {
+    "source": "holiday-hours.csv",
+    "doc_type": "table",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": "2025-12-31"
+  },
+  {
+    "source": "internal-notice-gym.md",
+    "doc_type": "notice",
+    "product": null,
+    "valid_from": "2025-06-01",
+    "valid_until": null
+  },
+  {
+    "source": "request-status.html",
+    "doc_type": "guide",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "requirements-by-procedure.pdf",
+    "doc_type": "requirements",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "service-cases.pdf",
+    "doc_type": "cases",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  },
+  {
+    "source": "service-glossary.md",
+    "doc_type": "glossary",
+    "product": null,
+    "valid_from": "2025-01-01",
+    "valid_until": null
+  }
+]
