@@ -23,7 +23,7 @@ def test_scores_go_from_levels_0_to_4_to_the_scale_1_to_5():
     verdict = verdict_from({"answers": {"groundedness": {"score": 3.5}, "relevance": {"value": 4}, "citation_correct": {"probability": 0.9}}})
 
     assert (verdict.groundedness, verdict.relevance, verdict.citation_correct) == (4.5, 5.0, 0.9)
-    assert verdict.judge == "microsoft-decision-1"
+    assert verdict.judge == "decision-1"
 
 
 def test_an_unexpected_answer_is_an_agent_error():

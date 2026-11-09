@@ -5,7 +5,7 @@ Uso:  uv run python dev/mock_foundry.py
 
 Chat: responde {"intent", "answer", "sources"} detectando la intención por palabras clave; en product_question
 cita el fragmento [1] del contexto y repite su comienzo. Con stream=true responde en pedazos, como Foundry.
-El rewrite devuelve la pregunta tal cual. El juez G-Eval y Microsoft-Decision-1 ponen notas fijas (S5).
+El rewrite devuelve la pregunta tal cual. El juez G-Eval y decision-1 ponen notas fijas (S5).
 Embeddings: vectores determinísticos por bolsa de palabras; textos con palabras en común quedan cerca.
 """
 
@@ -142,7 +142,7 @@ def _encode(vector: list[float], as_base64: bool) -> str | list[float]:
 
 @app.post("/providers/microsoft/v1/systemone")
 async def decision(request: Request, authorization: str = Header(default=""), api_key: str = Header(default="", alias="api-key")) -> dict:
-    """Microsoft-Decision-1 de mentira: puntajes fijos, más altos si la respuesta citó fuentes."""
+    """decision-1 de mentira: puntajes fijos, más altos si la respuesta citó fuentes."""
     if not (authorization.removeprefix("Bearer ").strip() or api_key):
         raise HTTPException(401, {"error": {"code": "401", "message": "Falta la credencial"}})
     body = await request.json()
@@ -152,7 +152,7 @@ async def decision(request: Request, authorization: str = Header(default=""), ap
         else {"type": "noul", "probability": 0.9 if supported else 0.2}
         for name, question in body["questions"].items()
     }
-    return {"model": "microsoft-decision-1", "answers": answers, "usage": {"input_tokens": len(json.dumps(body).split())}}
+    return {"model": "decision-1", "answers": answers, "usage": {"input_tokens": len(json.dumps(body).split())}}
 
 if __name__ == "__main__":
     uvicorn.run(app, host=os.environ.get("MOCK_HOST", "127.0.0.1"), port=8100)

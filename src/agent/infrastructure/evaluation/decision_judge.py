@@ -25,7 +25,7 @@ RELEVANCE_LEVELS = [
 
 
 class DecisionJudge:
-    """JUDGE=azure_evaluation: Microsoft-Decision-1, un modelo de decisión de Foundry. No escribe: devuelve números."""
+    """JUDGE=azure_evaluation: decision-1, un modelo de decisión de Foundry. No escribe: devuelve números."""
 
     def __init__(self, endpoint: str, credential: Credential, deployment: str, timeout_s: float) -> None:
         self.url = f"{endpoint.rstrip('/')}/providers/microsoft/v1/systemone"
@@ -45,11 +45,11 @@ class DecisionJudge:
             with urllib.request.urlopen(request, timeout=self.timeout_s) as response:
                 return verdict_from(json.loads(response.read().decode("utf-8")))
         except urllib.error.HTTPError as error:
-            raise AgentError(ErrorKind.UPSTREAM, f"Microsoft-Decision-1 respondió {error.code}") from error
+            raise AgentError(ErrorKind.UPSTREAM, f"decision-1 respondió {error.code}") from error
         except TimeoutError as error:
-            raise AgentError(ErrorKind.TIMEOUT, "Microsoft-Decision-1 no respondió a tiempo") from error
+            raise AgentError(ErrorKind.TIMEOUT, "decision-1 no respondió a tiempo") from error
         except urllib.error.URLError as error:
-            raise AgentError(ErrorKind.UPSTREAM, f"no se pudo llamar a Microsoft-Decision-1: {error.reason}") from error
+            raise AgentError(ErrorKind.UPSTREAM, f"no se pudo llamar a decision-1: {error.reason}") from error
 
 
 def _authorization(credential: Credential) -> dict[str, str]:
@@ -102,7 +102,7 @@ def verdict_from(payload: dict[str, Any]) -> Verdict:
         groundedness=_number(answers, "groundedness", "score", "value") + 1,
         relevance=_number(answers, "relevance", "score", "value") + 1,
         citation_correct=_number(answers, "citation_correct", "probability", "value"),
-        judge="microsoft-decision-1",
+        judge="decision-1",
     )
 
 
@@ -113,4 +113,4 @@ def _number(answers: dict[str, Any], question: str, *field_names: str) -> float:
     for name in field_names:
         if isinstance(answer.get(name), int | float):
             return float(answer[name])
-    raise AgentError(ErrorKind.INVALID_OUTPUT, f"Microsoft-Decision-1 no devolvió un número para {question}: {answer}")
+    raise AgentError(ErrorKind.INVALID_OUTPUT, f"decision-1 no devolvió un número para {question}: {answer}")

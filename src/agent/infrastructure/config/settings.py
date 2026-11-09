@@ -20,17 +20,12 @@ class KnowledgeBaseKind(StrEnum):
 
 class JudgeKind(StrEnum):
     LOCAL = "local"  # G-Eval con un modelo generativo de Foundry
-    AZURE_EVALUATION = "azure_evaluation"  # Microsoft-Decision-1
+    AZURE_EVALUATION = "azure_evaluation"  # decision-1
 
 
 class AgentRuntimeKind(StrEnum):
     REACT = "react"  # el ciclo ReAct propio de S6, sobre FoundryChatModel
     AGENT_FRAMEWORK = "agent_framework"  # S7: Microsoft Agent Framework conduce el turno
-
-
-class McpAuthProvider(StrEnum):
-    STATIC = "static"  # token fijo de desarrollo (MCP_TOKEN): dev/mcp/mock_mcp.py
-    ENTRA_ID = "entra_id"  # token de Entra ID para MCP_SCOPE: el MCP compartido
 
 
 class _EnvSettings(BaseSettings):
@@ -75,17 +70,14 @@ class SearchSettings(_EnvSettings):
 
 
 class McpSettings(_EnvSettings):
-    """Variables MCP_*: el servidor de las tools del agente. El mock local o el compartido: solo cambia el .env.
+    """Variables MCP_*: el servidor de las tools del agente. El mock local o el compartido: solo cambia MCP_URL.
 
-    MCP_URL vacío: el agente responde solo con RAG, sin tools.
+    El agente le manda su DOMAIN y el MCP le muestra solo las tools de ese dominio. MCP_URL vacío: solo RAG, sin tools.
     """
 
     model_config = SettingsConfigDict(env_prefix="MCP_")
 
-    url: str = "http://127.0.0.1:8200/mcp"
-    auth_provider: McpAuthProvider = McpAuthProvider.STATIC
-    token: SecretStr = SecretStr("")  # static: dev-<dominio>
-    scope: str = ""  # entra_id: el MCP_SCOPE de la ficha
+    url: str = "http://127.0.0.1:8200/mcp"  # el compartido: la URL que te da plataforma
 
 
 class Settings(_EnvSettings):

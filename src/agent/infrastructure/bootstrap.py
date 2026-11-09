@@ -26,7 +26,6 @@ from agent.infrastructure.llm.agent_framework_runtime import AgentFrameworkRunti
 from agent.infrastructure.llm.credentials import build_credential
 from agent.infrastructure.llm.foundry_chat_model import FoundryChatModel
 from agent.infrastructure.llm.foundry_embedder import FoundryEmbedder
-from agent.infrastructure.mcp.auth import mcp_bearer
 from agent.infrastructure.mcp.mcp_tools import McpTools
 from agent.infrastructure.persistence.in_memory_store import InMemoryConversationStore
 from agent.infrastructure.prompts.loader import load_prompt
@@ -91,11 +90,11 @@ def build_ready_knowledge_base(settings: Settings) -> KnowledgeBase:
     return knowledge_base
 
 
-def build_tools(mcp: McpSettings) -> Tools | None:
-    """Las tools del MCP de MCP_URL, ya listadas: sin MCP el agente no arranca. Con MCP_URL vacío, responde solo con RAG."""
+def build_tools(mcp: McpSettings, domain: str) -> Tools | None:
+    """Las tools de tu dominio en el MCP de MCP_URL, ya listadas: sin MCP el agente no arranca. MCP_URL vacío: solo RAG."""
     if not mcp.url:
         return None
-    tools = McpTools(mcp.url, lambda: mcp_bearer(mcp))
+    tools = McpTools(mcp.url, domain)
     try:
         definitions = tools.definitions()
     except AgentError as error:
@@ -151,7 +150,7 @@ def build_chat_service(
         system_prompt=load_prompt(settings.domain),
         max_turns=settings.max_turns,
         top_k=settings.search.top_k,
-        tools=tools or build_tools(settings.mcp),
+        tools=tools or build_tools(settings.mcp, settings.domain),
         skill=load_skill(settings.domain),
         runtime=None if chat_model else build_runtime(settings),  # con un modelo inyectado (tests), siempre ReAct
     )

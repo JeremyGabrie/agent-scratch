@@ -159,7 +159,7 @@ class Skill(BaseModel):
 
     name: str
     instructions: str
-    tools: list[str]  # lista blanca: además del token del MCP, la skill decide qué tools ve el modelo
+    tools: list[str]  # lista blanca: además del dominio que filtra el MCP, la skill decide qué tools ve el modelo
     max_tool_rounds: int = Field(ge=1)  # criterio de terminación: vueltas de tools sin responder antes de cortar
 
 

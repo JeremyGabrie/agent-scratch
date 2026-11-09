@@ -96,6 +96,6 @@ class KnowledgeBase(Protocol):
 
 
 class Judge(Protocol):
-    """Califica una respuesta contra los fragmentos que vio el modelo. S5: G-Eval o Microsoft-Decision-1, según JUDGE."""
+    """Califica una respuesta contra los fragmentos que vio el modelo. S5: G-Eval o decision-1, según JUDGE."""
 
     def evaluate(self, question: str, fragments: list[SearchHit], answer: str, cited: list[Citation]) -> Verdict: ...

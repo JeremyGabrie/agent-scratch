@@ -86,7 +86,7 @@ class ChatService:
         max_turns: int,
         top_k: int,
         tools: Tools | None = None,  # sin tools (MCP_URL vacío), el agente responde solo con RAG
-        skill: Skill | None = None,  # S7: la skill del dominio; sin ella, todas las tools del token y MAX_TOOL_ROUNDS
+        skill: Skill | None = None,  # S7: la skill del dominio; sin ella, todas las tools de tu dominio y MAX_TOOL_ROUNDS
         runtime: AgentRuntime | None = None,  # S7: Agent Framework; por defecto, el ciclo ReAct propio sobre model
     ) -> None:
         self.rewriter = rewriter

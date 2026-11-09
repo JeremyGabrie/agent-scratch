@@ -23,7 +23,7 @@ Dominios: `fraud`, `fees`, `cards`, `loans` y `support` (variable `DOMAIN`).
 | `t1-s2` = `t1-v0.1` | historial por sesión, errores tipados, consumo por turno y Entra ID | ✅ |
 | `t2-s3` | ingesta del corpus del dominio e índice local | ✅ |
 | `t2-s4` | retrieval híbrido (Qdrant local o Azure AI Search) y RAG con citas en `/chat` | ✅ |
-| `t2-s5` = `t2-v0.2` | golden set de 30 casos por dominio, juez (G-Eval o Microsoft-Decision-1) y datos personales enmascarados | ✅ |
+| `t2-s5` = `t2-v0.2` | golden set de 30 casos por dominio, juez (G-Eval o decision-1) y datos personales enmascarados | ✅ |
 | `t3-*` → `t3-v0.3` | tools MCP, memoria y aprobación humana | ⏳ |
 | `t4-*` → `t4-v0.4` | despliegue, trazas, evaluaciones y guardrails | ⏳ |
 | `v1.0` | integración final | ⏳ |

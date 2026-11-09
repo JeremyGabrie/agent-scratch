@@ -1,7 +1,8 @@
 """MCP simulado para desarrollo: las 15 tools de bank-mcp con el mismo contrato, sobre datos sintéticos en memoria.
 
 Arranque: uv run python dev/mcp/mock_mcp.py        (Streamable HTTP en http://127.0.0.1:8200/mcp)
-Tokens: dev-all ve las 15 tools; dev-<dominio> (dev-fraud, dev-fees, ...) solo las de su dominio, como el MCP compartido.
+Dominio: el header X-Bank-Domain (fees, cards, fraud, loans, support) deja ver solo las tools de ese dominio, como el MCP
+compartido. Sin el header se ven las 15.
 """
 
 from datetime import timedelta
@@ -27,13 +28,14 @@ from bank_models import (
 )
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
-from fastmcp.server.auth import AuthContext, TokenVerifier
-from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
+from fastmcp.server.auth import AuthContext
+from fastmcp.server.dependencies import get_http_headers
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
 PORT = 8200
 DOMAINS = ("fees", "cards", "fraud", "loans", "support")
+DOMAIN_HEADER = "x-bank-domain"
 CLAIM_RESPONSE_DAYS = 30
 
 CustomerId = Annotated[str, Field(description="Código del cliente, por ejemplo CUS-1001.", pattern=r"^CUS-\d{4}$")]
@@ -46,19 +48,12 @@ INSTRUCTIONS = (
 )
 
 
-def dev_tokens() -> dict[str, dict]:
-    """Mismos tokens de desarrollo que bank-mcp. Son públicos: solo sirven en local."""
-    tokens = {"dev-all": {"client_id": "dev-all", "scopes": [f"domain.{d}" for d in DOMAINS]}}
-    tokens |= {f"dev-{d}": {"client_id": f"dev-{d}", "scopes": [f"domain.{d}"]} for d in DOMAINS}
-    return tokens
-
-
 def allowed_for(domains: set[str]):
-    """La tool aparece solo si el token trae el permiso de alguno de sus dominios."""
-    needed = {f"domain.{d}" for d in domains}
+    """La tool aparece solo si el header X-Bank-Domain es uno de sus dominios, o si no viene (en memoria, en los tests)."""
 
     def check(ctx: AuthContext) -> bool:
-        return ctx.token is not None and bool(needed & set(ctx.token.scopes))
+        domain = get_http_headers().get(DOMAIN_HEADER)
+        return domain is None or domain in domains
 
     return check
 
@@ -69,18 +64,17 @@ def monthly_installment(amount: float, term_months: int, annual_rate: float) -> 
     return round(amount * monthly_rate / (1 - (1 + monthly_rate) ** -term_months), 2)
 
 
-def create_server(verifier: TokenVerifier | None = StaticTokenVerifier(tokens=dev_tokens())) -> FastMCP:
-    """verifier=None: sin tokens ni filtro por dominio (para comparar el contrato en los tests)."""
+def create_server() -> FastMCP:
     state = fresh_state()
     ids = count(9001)
-    mcp = FastMCP("mock-mcp", instructions=INSTRUCTIONS, auth=verifier)
+    mcp = FastMCP("mock-mcp", instructions=INSTRUCTIONS)
 
     def tool(*domains: str, read_only: bool):
         return mcp.tool(
             tags=set(domains),
             annotations=ToolAnnotations(read_only_hint=read_only, destructive_hint=not read_only,
                                         idempotent_hint=read_only, open_world_hint=False),
-            auth=allowed_for(set(domains)) if verifier else None,
+            auth=allowed_for(set(domains)),
         )
 
     def found(collection: str, key: str, label: str):

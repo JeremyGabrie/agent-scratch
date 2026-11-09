@@ -1,7 +1,7 @@
-"""Lista o llama tools del servidor MCP que dice el .env (MCP_URL, MCP_AUTH_PROVIDER): el mock local o el compartido.
+"""Lista o llama tools del servidor MCP que dice el .env (MCP_URL y DOMAIN): el mock local o el compartido.
 
 Uso:
-  uv run python dev/mcp/mcp_tools.py                                              lista las tools que ve tu token
+  uv run python dev/mcp/mcp_tools.py                                              lista las tools de tu dominio
   uv run python dev/mcp/mcp_tools.py get_transactions customer_id=CUS-1001 limit=2   llama una tool
 """
 
@@ -10,10 +10,10 @@ import json
 import sys
 
 from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
 from fastmcp.exceptions import ToolError
 
 from agent.infrastructure.config.settings import Settings
-from agent.infrastructure.mcp.auth import mcp_bearer
 
 
 def argument(value: str):
@@ -25,11 +25,12 @@ def argument(value: str):
 
 
 async def main(args: list[str]) -> int:
-    mcp = Settings().mcp
-    async with Client(mcp.url, auth=mcp_bearer(mcp)) as client:
+    settings = Settings()
+    transport = StreamableHttpTransport(settings.mcp.url, headers={"X-Bank-Domain": settings.domain})
+    async with Client(transport) as client:
         if not args:
             tools = await client.list_tools()
-            print(f"{mcp.url} · {mcp.auth_provider} · {len(tools)} tools")
+            print(f"{settings.mcp.url} · {settings.domain} · {len(tools)} tools")
             for tool in sorted(tools, key=lambda tool: tool.name):
                 kind = "consulta" if tool.annotations and tool.annotations.read_only_hint else "acción sensible"
                 print(f"  {tool.name:<30} {kind:<16} {', '.join(tool.input_schema.get('properties', {}))}")

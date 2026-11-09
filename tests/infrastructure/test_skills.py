@@ -14,7 +14,7 @@ def test_there_is_one_skill_per_domain():
 
 
 @pytest.mark.parametrize("domain", DOMAINS)
-def test_skill_only_lists_tools_its_domain_token_can_see(domain):
+def test_skill_only_lists_tools_its_domain_can_see(domain):
     skill = load_skill(domain)
     domain_tools = {tool["name"] for tool in CONTRACT if domain in tool["domains"]}
     assert skill.name == domain

@@ -4,19 +4,29 @@ from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
 
 from fastmcp import Client, FastMCP
+from fastmcp.client.transports import StreamableHttpTransport
 from fastmcp.exceptions import ToolError
 from mcp.types import Tool
 
 from agent.domain.errors import AgentError, ErrorKind
 from agent.domain.models import ToolCall, ToolDefinition, ToolResult, ToolStatus
 
+DOMAIN_HEADER = "X-Bank-Domain"
+
+
+def mcp_client(server: str | FastMCP, domain: str = "") -> Client:
+    """Por HTTP, el header X-Bank-Domain le dice al MCP el dominio del agente: solo ve sus tools. En memoria, todas."""
+    if isinstance(server, str):
+        return Client(StreamableHttpTransport(server, headers={DOMAIN_HEADER: domain} if domain else None))
+    return Client(server)
+
 
 class McpTools:
-    """Implementa Tools con un servidor MCP: el mock local o el compartido, según MCP_*. El token decide qué tools ve."""
+    """Implementa Tools con un servidor MCP: el mock local o el compartido, según MCP_URL. DOMAIN decide qué tools ve."""
 
-    def __init__(self, server: str | FastMCP, token: Callable[[], str] | None = None) -> None:
+    def __init__(self, server: str | FastMCP, domain: str = "") -> None:
         self.server = server  # la URL del MCP; en los tests, el servidor en memoria
-        self.token = token
+        self.domain = domain
         self._definitions: list[ToolDefinition] | None = None
 
     def definitions(self) -> list[ToolDefinition]:
@@ -34,7 +44,7 @@ class McpTools:
 
     def _run[Result](self, action: Callable[[Client], Awaitable[Result]]) -> Result:
         async def run() -> Result:
-            async with Client(self.server, auth=self.token() if self.token else None) as client:
+            async with mcp_client(self.server, self.domain) as client:
                 return await action(client)
 
         # el agente es síncrono, pero uvicorn lo arma dentro de su event loop: el cliente MCP corre en un hilo con el suyo.
@@ -44,7 +54,7 @@ class McpTools:
                 return thread.submit(asyncio.run, run()).result()
         except ToolError:
             raise
-        except Exception as error:  # conexión, token o timeout: el MCP no está disponible
+        except Exception as error:  # conexión o timeout: el MCP no está disponible
             raise AgentError(ErrorKind.UPSTREAM, f"no se pudo llamar al MCP: {type(error).__name__}") from error
 
 

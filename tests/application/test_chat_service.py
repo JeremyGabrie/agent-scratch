@@ -229,7 +229,7 @@ def test_skill_decides_which_tools_the_model_sees_and_adds_its_instructions():
 
     assert [tool.name for tool in model.offered[0]] == ["get_charged_fees"]
     assert "SKILL fees" in [message["content"] for message in model.received[0]]
-    # el modelo pidió una tool fuera de la skill: no se ejecuta, aunque el token del MCP sí la tenga
+    # el modelo pidió una tool fuera de la skill: no se ejecuta, aunque el MCP sí la muestre
     assert turn.tools[0].status is ToolStatus.ERROR
     assert tools.executed == []
 

@@ -59,7 +59,7 @@ class GEvalJudge:
         return Verdict(
             groundedness=scores.groundedness,
             relevance=scores.relevance,
-            citation_correct=(scores.citation_correct - 1) / 4,  # de 1-5 a 0-1, la misma escala que Microsoft-Decision-1
+            citation_correct=(scores.citation_correct - 1) / 4,  # de 1-5 a 0-1, la misma escala que decision-1
             reasoning=scores.reasoning,
             judge="g-eval",
         )
