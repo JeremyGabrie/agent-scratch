@@ -99,18 +99,16 @@ def verdict_from(payload: dict[str, Any]) -> Verdict:
     answers = payload.get("answers", {})
     return Verdict(
         # el puntaje es el promedio de los niveles pesado por su probabilidad, de 0 a 4: se lleva a la escala de 1 a 5
-        groundedness=_number(answers, "groundedness", "score", "value") + 1,
-        relevance=_number(answers, "relevance", "score", "value") + 1,
-        citation_correct=_number(answers, "citation_correct", "probability", "value"),
+        groundedness=_number(answers, "groundedness", "score") + 1,
+        relevance=_number(answers, "relevance", "score") + 1,
+        # una pregunta "noul" responde en el campo del mismo nombre: la probabilidad de "true", de 0 a 1
+        citation_correct=_number(answers, "citation_correct", "noul"),
         judge="decision-1",
     )
 
 
-def _number(answers: dict[str, Any], question: str, *field_names: str) -> float:
-    # ponytail: la documentación pública solo muestra la respuesta de "choice"; se aceptan los dos nombres posibles del
-    # campo hasta confirmar el formato con la primera llamada real
+def _number(answers: dict[str, Any], question: str, field: str) -> float:
     answer = answers.get(question, {})
-    for name in field_names:
-        if isinstance(answer.get(name), int | float):
-            return float(answer[name])
-    raise AgentError(ErrorKind.INVALID_OUTPUT, f"decision-1 no devolvió un número para {question}: {answer}")
+    if not isinstance(answer.get(field), int | float):
+        raise AgentError(ErrorKind.INVALID_OUTPUT, f"decision-1 no devolvió un número para {question}: {answer}")
+    return float(answer[field])

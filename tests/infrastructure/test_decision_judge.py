@@ -20,7 +20,9 @@ def test_the_request_asks_three_questions_about_the_same_state():
 
 
 def test_scores_go_from_levels_0_to_4_to_the_scale_1_to_5():
-    verdict = verdict_from({"answers": {"groundedness": {"score": 3.5}, "relevance": {"value": 4}, "citation_correct": {"probability": 0.9}}})
+    verdict = verdict_from({"answers": {"groundedness": {"type": "score", "score": 3.5},
+                                        "relevance": {"type": "score", "score": 4.0},
+                                        "citation_correct": {"type": "noul", "noul": 0.9}}})
 
     assert (verdict.groundedness, verdict.relevance, verdict.citation_correct) == (4.5, 5.0, 0.9)
     assert verdict.judge == "decision-1"

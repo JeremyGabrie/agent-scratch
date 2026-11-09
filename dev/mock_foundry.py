@@ -149,7 +149,7 @@ async def decision(request: Request, authorization: str = Header(default=""), ap
     supported = bool(body["state"]["fragments"]) and bool(body["state"]["cited_sources"])
     answers = {
         name: {"type": "score", "score": 3.5 if supported else 1.0} if question["type"] == "score"
-        else {"type": "noul", "probability": 0.9 if supported else 0.2}
+        else {"type": "noul", "noul": 0.9 if supported else 0.2}
         for name, question in body["questions"].items()
     }
     return {"model": "decision-1", "answers": answers, "usage": {"input_tokens": len(json.dumps(body).split())}}
