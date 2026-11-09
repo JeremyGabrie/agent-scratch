@@ -1,6 +1,6 @@
 """Evaluación del RAG con el golden set del dominio: el mismo agente que atiende el chat, caso por caso.
 
-uv run eval                            los 30 casos de evals/golden/<dominio>.jsonl
+uv run eval                            el golden set del dominio: los 30 casos base y el de cada participante
 uv run eval --limit 5                  solo los primeros 5
 uv run eval --case fraud-01            un solo caso
 uv run eval --judge azure_evaluation   otro juez (por defecto, JUDGE de .env)
@@ -14,7 +14,7 @@ from agent.application.evaluation import EvaluateAgent, summarize
 from agent.domain.evaluation import CaseResult, EvalSummary
 from agent.infrastructure.bootstrap import build_chat_service, build_judge
 from agent.infrastructure.config.settings import ROOT, JudgeKind, Settings
-from agent.infrastructure.evaluation.golden_file import read_golden
+from agent.infrastructure.evaluation.golden_file import golden_files, read_golden
 
 HEADER = f"{'caso':<12} {'tipo':<14} {'recall':^6} {'intención':^9} {'fuentes':^7} {'hechos':^6} " \
          f"{'apoyo':>5} {'relevancia':>10} {'cita':>5}  datos personales"
@@ -28,7 +28,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     settings = Settings()
-    cases = read_golden(ROOT / "evals" / "golden" / f"{settings.domain}.jsonl")
+    cases = [case for path in golden_files(ROOT / "evals" / "golden", settings.domain) for case in read_golden(path)]
     if args.case:
         cases = [case for case in cases if case.id == args.case]
     cases = cases[: args.limit] if args.limit else cases
