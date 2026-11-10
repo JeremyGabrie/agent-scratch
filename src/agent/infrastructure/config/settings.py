@@ -77,7 +77,7 @@ class McpSettings(_EnvSettings):
 
     model_config = SettingsConfigDict(env_prefix="MCP_")
 
-    url: str = "http://127.0.0.1:8200/mcp"  # el compartido: la URL que te da plataforma
+    url: str = "http://127.0.0.1:8200/mcp"  # el mock de dev/mcp; para el compartido, MCP_URL en el .env
 
 
 class Settings(_EnvSettings):

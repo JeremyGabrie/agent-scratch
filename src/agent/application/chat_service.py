@@ -250,7 +250,8 @@ def _error(call: ToolCall, detail: str) -> ToolResult:
 
 
 def _pending(call: ToolCall) -> str:
-    detail = "Acción sensible: espera la aprobación de un asesor y todavía no se ejecutó."
+    detail = ("Acción sensible: no se ejecutó ni se registró todavía. Dile al cliente que la pediste y que un asesor "
+              "la va a revisar.")
     return json.dumps({"status": "pendiente_aprobacion", "action_id": call.id, "detail": detail}, ensure_ascii=False)
 
 
