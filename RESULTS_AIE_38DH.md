@@ -29,8 +29,78 @@ Fallas tipadas (paso 8.3): `FOUNDRY_TIMEOUT_S=0.01` → `504 (timeout)`; sin ses
 - `completion_tokens` (103 a 730) es mucho mayor que el texto visible de varias respuestas, lo que sugiere que incluye tokens de razonamiento de `gpt-5-mini`. La salida domina el costo y la latencia.
 - La latencia va de 2.3 s a 6.1 s y sube con `completion_tokens`.
 
-## Trade-offs de modelo y costo (borrador para discutir con el equipo)
+## Evaluación de trade-offs y decisiones
 
-1. **`gpt-5-mini` frente a `gpt-5-nano` para clasificar la intención.** Las cinco intenciones salieron correctas con `gpt-5-mini`, pero cada turno tarda entre 2.3 s y 5.7 s y genera hasta 691 tokens de salida. Un modelo más chico (`gpt-5-nano`, disponible en el mismo recurso) debería bajar latencia y costo de salida; el riesgo es clasificar peor los casos ambiguos, como "¿Cómo me llamo?" o "¿Y eso lo puedo hacer desde la app?". Propuesta: medir `gpt-5-nano` con las mismas conversaciones y aceptarlo solo si la intención coincide en todas.
+### Método
 
-2. **`MAX_TURNS=10` frente a `MAX_TURNS=4`.** Cada turno reenvía el historial completo, así que `prompt_tokens ≈ 380 + Σ (mensaje + respuesta)` de los turnos guardados. Con respuestas de varios cientos de tokens, 10 turnos pueden multiplicar varias veces la entrada de una conversación larga, mientras que 4 turnos la acotan. El costo mensual escala con `conversaciones × turnos promedio × prompt_tokens`. Propuesta: usar `MAX_TURNS=4` para atención y FAQ, donde las consultas suelen ser cortas, y validar que no se pierda contexto necesario.
+- Agente real (`create_app`) contra Foundry, sin el mock. Mismo system prompt de `support`.
+- Precios de lista de Azure (Global, USD por 1M tokens, [Azure Retail Prices API](https://prices.azure.com/api/retail/prices), noviembre 2026): `gpt-5-mini` 0.25 entrada / 2.00 salida; `gpt-5-nano` 0.05 entrada / 0.40 salida.
+- Costo de un turno = `(prompt_tokens × precio_entrada + completion_tokens × precio_salida) / 1 000 000`.
+- Muestra chica: 11 mensajes × 2 repeticiones por modelo (22 llamadas cada uno) y una conversación de 7 turnos por valor de `MAX_TURNS`. Sirve para decidir el tema 1; el golden set de la sesión 5 lo vuelve a medir con más casos.
+
+### Trade-off 1: `gpt-5-mini` frente a `gpt-5-nano`
+
+Set de 11 mensajes alineado a las definiciones de intención de `prompts/support.md`: 2 por intención, más "¿Y eso lo puedo hacer desde la app?" como caso ambiguo.
+
+| Métrica | `gpt-5-mini` | `gpt-5-nano` |
+|---|---:|---:|
+| Intención correcta | **22/22 (100 %)** | 21/22 (95.5 %) |
+| Intención estable entre repeticiones | sí | no ("¿A cuánto está el dólar hoy?" salió `out_of_scope` y luego `product_question`) |
+| Latencia mediana | **4.6 s** | 5.2 s |
+| Latencia p90 | 6.9 s | 6.4 s |
+| `completion_tokens` promedio | 452 | 700 |
+| Largo promedio de la respuesta visible | 356 caracteres | 239 caracteres |
+| Costo promedio por turno | USD 0.00100 | **USD 0.00030** |
+
+Lo que muestran los datos:
+
+- `gpt-5-nano` es unas 3.3 veces más barato por turno, pero **no es más rápido**. Genera más tokens de salida (700 frente a 452) aunque su respuesta visible es más corta, así que gasta más en razonamiento interno. La latencia mediana sube de 4.6 s a 5.2 s.
+- La salida es cerca del 90 % del costo en ambos modelos. La entrada (unos 387 tokens, casi todo system prompt) pesa poco.
+- `gpt-5-nano` falló una vez en un caso que `gpt-5-mini` resolvió siempre: clasificó una pregunta fuera de alcance como `product_question`.
+
+**Decisión: mantener `gpt-5-mini` como único modelo del agente en el tema 1.**
+
+Fundamento:
+
+1. **La intención es una decisión de enrutamiento, no un dato decorativo.** Desde el tema 2, `product_question` dispara RAG (búsqueda e índice, más llamadas y más tokens). En el tema 3, `data_query` llama tools y `sensitive_action` exige aprobación humana. Un error de clasificación cuesta más abajo en el flujo (una búsqueda inútil, o una acción sensible que no pide confirmación) que lo que se ahorra por turno.
+2. **El ahorro absoluto es chico.** Con un supuesto de 10 000 conversaciones al mes y 5 turnos promedio (50 000 turnos), `gpt-5-mini` cuesta unos USD 50 al mes y `gpt-5-nano` unos USD 15. La diferencia, USD 35 al mes, no compensa perder estabilidad en la intención.
+3. **`gpt-5-nano` no mejora la experiencia.** No baja la latencia, que era el otro argumento para cambiar de modelo.
+
+Cuándo revisarla: si el golden set de la sesión 5 muestra que `gpt-5-nano` iguala la precisión de intención, o si el tráfico real multiplica el costo. Una alternativa a evaluar es bajar el esfuerzo de razonamiento de `gpt-5-mini`, ya que la latencia viene de los tokens de razonamiento y no del texto visible.
+
+### Trade-off 2: `MAX_TURNS=10` frente a `MAX_TURNS=4`
+
+Conversación de 7 turnos con `gpt-5-mini`: el cliente da su nombre y su objetivo en el turno 1, hace 5 preguntas de seguimiento y en el turno 7 pregunta "¿cómo me llamo y qué trámite quería hacer?".
+
+| Turno | `prompt_tokens` con 10 | `prompt_tokens` con 4 |
+|---:|---:|---:|
+| 1 | 392 | 392 |
+| 2 | 544 | 522 |
+| 3 | 700 | 689 |
+| 4 | 862 | 865 |
+| 5 | 965 | 983 |
+| 6 | 1063 | 937 |
+| 7 | 1154 | 895 |
+
+| Métrica | `MAX_TURNS=10` | `MAX_TURNS=4` |
+|---|---:|---:|
+| `prompt_tokens` totales | 5680 | 5283 (−7 %) |
+| `completion_tokens` totales | 3708 | 4461 |
+| Costo de la conversación | USD 0.0088 | USD 0.0102 |
+| Recuerda nombre y trámite en el turno 7 | **sí**: "Te llamas Ana y querías abrir una cuenta de ahorros" | **no**: se niega a dar datos y deriva a la app |
+
+Lo que muestran los datos:
+
+- El recorte solo actúa desde el turno 6. Antes, ambos envían el mismo historial.
+- Recortar a 4 turnos ahorró 397 tokens de entrada, unos USD 0.0001 por conversación (el 1 % del costo). La variación de los tokens de salida entre corridas fue mucho mayor que ese ahorro.
+- Con 4 turnos el agente perdió el contexto que el cliente dio al inicio y respondió peor: una negativa larga en vez del dato.
+
+**Decisión: mantener `MAX_TURNS=10`.**
+
+Fundamento:
+
+1. **El historial pesa poco en el costo.** En esta conversación la entrada fue cerca del 16 % del costo y la salida, el 84 %. Recortar historial ataca la parte barata.
+2. **Perder contexto se nota en la calidad.** En atención al cliente el dato importante (quién es, qué trámite quiere) suele aparecer al inicio. Con 4 turnos se pierde justo cuando la conversación se alarga.
+3. **10 turnos ya es un límite.** Acota el peor caso de una conversación muy larga, que es para lo que existe `MAX_TURNS`.
+
+Cuándo revisarla: en el tema 2, cuando cada turno sume los chunks del RAG a la entrada. Ahí la entrada pesará más en el costo y conviene volver a medir.
