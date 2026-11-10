@@ -9,6 +9,7 @@ import asyncio
 import json
 import sys
 
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
 from fastmcp.exceptions import ToolError
@@ -26,7 +27,11 @@ def argument(value: str):
 
 async def main(args: list[str]) -> int:
     settings = Settings()
-    transport = StreamableHttpTransport(settings.mcp.url, headers={"X-Bank-Domain": settings.domain})
+    headers = {"X-Bank-Domain": settings.domain}
+    if settings.mcp.scope:  # el MCP compartido pide un token de Entra: az login
+        token = get_bearer_token_provider(DefaultAzureCredential(), settings.mcp.scope)()
+        headers["Authorization"] = f"Bearer {token}"
+    transport = StreamableHttpTransport(settings.mcp.url, headers=headers)
     async with Client(transport) as client:
         if not args:
             tools = await client.list_tools()

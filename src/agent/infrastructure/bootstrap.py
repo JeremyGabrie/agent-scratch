@@ -4,8 +4,9 @@ Arranque: uv run uvicorn agent.infrastructure.bootstrap:create_app --factory --r
 """
 
 import logging
+from urllib.parse import urlparse
 
-from azure.identity import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from fastapi import FastAPI
 
 from agent.application.chat_service import ChatService
@@ -94,15 +95,24 @@ def build_tools(mcp: McpSettings, domain: str) -> Tools | None:
     """Las tools de tu dominio en el MCP de MCP_URL, ya listadas: sin MCP el agente no arranca. MCP_URL vacío: solo RAG."""
     if not mcp.url:
         return None
-    tools = McpTools(mcp.url, domain)
+    # el compartido está detrás de Entra: az login en local, Managed Identity desplegado
+    token = get_bearer_token_provider(DefaultAzureCredential(), mcp.scope) if mcp.scope else None
+    tools = McpTools(mcp.url, domain, token)
     try:
         definitions = tools.definitions()
     except AgentError as error:
-        raise RuntimeError(
-            f"No hay un MCP en {mcp.url}. Levanta el mock (uv run python dev/mcp/mock_mcp.py) o deja MCP_URL vacío."
-        ) from error
+        raise RuntimeError(_mcp_hint(mcp)) from error
     log.info("MCP: %s · %d tools: %s", mcp.url, len(definitions), ", ".join(tool.name for tool in definitions))
     return tools
+
+
+def _mcp_hint(mcp: McpSettings) -> str:
+    """Qué revisar cuando el MCP no responde. El cliente MCP no expone el código HTTP: se deduce de la configuración."""
+    if urlparse(mcp.url).hostname in ("127.0.0.1", "localhost"):
+        return f"No hay un MCP en {mcp.url}. Levanta el mock (uv run python dev/mcp/mock_mcp.py) o deja MCP_URL vacío."
+    if not mcp.scope:
+        return f"El MCP en {mcp.url} no respondió: falta MCP_SCOPE en el .env (el compartido pide un token de Entra)."
+    return f"El MCP en {mcp.url} no respondió o rechazó tu token: revisa MCP_URL, MCP_SCOPE y que hiciste az login."
 
 
 def build_judge(settings: Settings, kind: JudgeKind | None = None) -> Judge:

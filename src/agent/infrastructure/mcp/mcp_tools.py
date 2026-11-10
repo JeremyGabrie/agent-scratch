@@ -13,20 +13,29 @@ from agent.domain.models import ToolCall, ToolDefinition, ToolResult, ToolStatus
 
 DOMAIN_HEADER = "X-Bank-Domain"
 
+TokenProvider = Callable[[], str]  # devuelve un token de Entra vigente; lo renueva solo
 
-def mcp_client(server: str | FastMCP, domain: str = "") -> Client:
-    """Por HTTP, el header X-Bank-Domain le dice al MCP el dominio del agente: solo ve sus tools. En memoria, todas."""
+
+def mcp_client(server: str | FastMCP, domain: str = "", token: TokenProvider | None = None) -> Client:
+    """Por HTTP, el header X-Bank-Domain le dice al MCP el dominio del agente: solo ve sus tools. En memoria, todas.
+
+    Con token (el MCP compartido), cada conexión manda un Bearer recién pedido. Sin token (el mock), no manda ninguno.
+    """
     if isinstance(server, str):
-        return Client(StreamableHttpTransport(server, headers={DOMAIN_HEADER: domain} if domain else None))
+        headers = {DOMAIN_HEADER: domain} if domain else {}
+        if token:
+            headers["Authorization"] = f"Bearer {token()}"
+        return Client(StreamableHttpTransport(server, headers=headers or None))
     return Client(server)
 
 
 class McpTools:
     """Implementa Tools con un servidor MCP: el mock local o el compartido, según MCP_URL. DOMAIN decide qué tools ve."""
 
-    def __init__(self, server: str | FastMCP, domain: str = "") -> None:
+    def __init__(self, server: str | FastMCP, domain: str = "", token: TokenProvider | None = None) -> None:
         self.server = server  # la URL del MCP; en los tests, el servidor en memoria
         self.domain = domain
+        self.token = token
         self._definitions: list[ToolDefinition] | None = None
 
     def definitions(self) -> list[ToolDefinition]:
@@ -44,7 +53,7 @@ class McpTools:
 
     def _run[Result](self, action: Callable[[Client], Awaitable[Result]]) -> Result:
         async def run() -> Result:
-            async with mcp_client(self.server, self.domain) as client:
+            async with mcp_client(self.server, self.domain, self.token) as client:
                 return await action(client)
 
         # el agente es síncrono, pero uvicorn lo arma dentro de su event loop: el cliente MCP corre en un hilo con el suyo.

@@ -45,6 +45,12 @@ def test_the_agent_tells_the_mcp_its_domain():
     assert mcp_client("http://127.0.0.1:8200/mcp", "fees").transport.headers == {DOMAIN_HEADER: "fees"}
 
 
+def test_with_a_token_the_agent_sends_it_as_bearer():
+    client = mcp_client("https://mcp.example/mcp", "fees", token=lambda: "token-1")
+
+    assert client.transport.headers == {DOMAIN_HEADER: "fees", "Authorization": "Bearer token-1"}
+
+
 def test_it_also_works_inside_an_event_loop():
     """uvicorn arma el agente dentro de su event loop: ahí asyncio.run() solo no funciona."""
 
