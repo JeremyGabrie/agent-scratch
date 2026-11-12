@@ -1,0 +1,59 @@
+{
+ "summary": {
+  "cases": 1,
+  "recall_at_k": 1.0,
+  "intent_accuracy": 1.0,
+  "sources_ok": 1.0,
+  "facts_ok": 1.0,
+  "groundedness": 5.0,
+  "relevance": 5.0,
+  "citation_correct": 1.0,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 0,
+  "prompt_tokens": 709,
+  "completion_tokens": 364
+ },
+ "results": [
+  {
+   "case_id": "support-01",
+   "case_type": "answerable",
+   "answer": "Para abrir una cuenta de ahorros necesitas: ser mayor de 18 años, DNI vigente y un número de celular y un correo propios. Puedes abrirla por la app (toma unos 10 minutos con validación biométrica; la tarjeta de débito digital está disponible al instante) o en una agencia presentando tu DNI (la tarjeta física se entrega en el momento).",
+   "intent": "product_question",
+   "cited_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "account-opening.md"
+   ],
+   "retrieved_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "account-opening.md",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta lista exactamente los requisitos (mayor de 18, DNI vigente, celular y correo) que aparecen en el fragmento [2], y las opciones de apertura por app (unos 10 minutos con validación biométrica y tarjeta digital instantánea) y en agencia (con DNI y tarjeta física al momento) que están en [1],[3] y [4]. Las fuentes citadas contienen esas afirmaciones.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 5111,
+    "prompt_tokens": 709,
+    "completion_tokens": 364
+   }
+  }
+ ]
+}

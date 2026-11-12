@@ -1,0 +1,252 @@
+{
+ "summary": {
+  "cases": 6,
+  "recall_at_k": 1.0,
+  "intent_accuracy": 1.0,
+  "sources_ok": 1.0,
+  "facts_ok": 1.0,
+  "groundedness": 5.0,
+  "relevance": 5.0,
+  "citation_correct": 1.0,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 0,
+  "prompt_tokens": 4424,
+  "completion_tokens": 2050
+ },
+ "results": [
+  {
+   "case_id": "support-01",
+   "case_type": "answerable",
+   "answer": "Para abrir una cuenta de ahorros necesitas: ser mayor de 18 años, DNI vigente y un número de celular y correo propios. Puedes abrirla por la app en unos 10 minutos con validación biométrica (la tarjeta de débito digital está disponible al instante), o en agencia presentando tu DNI (la tarjeta física se entrega en el momento).",
+   "intent": "product_question",
+   "cited_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "account-opening.md"
+   ],
+   "retrieved_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "account-opening.md",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Todas las afirmaciones del asistente (requisitos: mayor de 18, DNI vigente, celular y correo propios; apertura por app en ~10 minutos con validación biométrica y tarjeta digital instantánea; apertura en agencia con DNI y tarjeta física al momento) están presentes en los fragmentos citados. Las fuentes referenciadas (account-opening.md y app-faq.md) contienen exactamente esas informaciones, por lo que la respuesta es completa y pertinente.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 5586,
+    "prompt_tokens": 709,
+    "completion_tokens": 488
+   }
+  },
+  {
+   "case_id": "support-02",
+   "case_type": "answerable",
+   "answer": "La cuenta se abre en unos 10 minutos con tu DNI y validación biométrica. La tarjeta de débito digital está disponible al instante.",
+   "intent": "product_question",
+   "cited_sources": [
+    "account-opening.md",
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "account-opening.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta indica que la cuenta se abre en unos 10 minutos con DNI y validación biométrica, y que la tarjeta de débito digital está disponible al instante. Esas afirmaciones aparecen explícitamente en los fragmentos account-opening.md y app-faq.md citados.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3969,
+    "prompt_tokens": 757,
+    "completion_tokens": 312
+   }
+  },
+  {
+   "case_id": "support-03",
+   "case_type": "answerable",
+   "answer": "Sí. Desde la app puedes transferir a otros bancos las 24 horas. Las transferencias interbancarias inmediatas se acreditan al instante.",
+   "intent": "product_question",
+   "cited_sources": [
+    "app-faq.md",
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "service-cases.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que sí se puede transferir a otros bancos desde la app, que puede hacerse las 24 horas y que las transferencias interbancarias inmediatas se acreditan al instante. Esos tres puntos aparecen explícitamente en los fragmentos (principalmente [1] y [2]) y las fuentes citadas (app-faq.md) contienen esas afirmaciones.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3604,
+    "prompt_tokens": 764,
+    "completion_tokens": 378
+   }
+  },
+  {
+   "case_id": "support-04",
+   "case_type": "answerable",
+   "answer": "La banca por teléfono atiende al (01) 555-0200, de lunes a sábado de 8:00 a 20:00.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "account-opening.md",
+    "account-opening.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma el número de teléfono y el horario de atención (lunes a sábado de 8:00 a 20:00), que coincide exactamente con el fragmento [1]. La fuente citada (channels-and-hours.html) contiene esa información, por lo que la respuesta está totalmente respaldada y es relevante para la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 2846,
+    "prompt_tokens": 726,
+    "completion_tokens": 248
+   }
+  },
+  {
+   "case_id": "support-05",
+   "case_type": "answerable",
+   "answer": "El número de la banca por teléfono es (01) 555-0200. Horario: lunes a sábado de 8:00 a 20:00.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "channels-and-hours.html",
+    "account-opening.md",
+    "account-opening.md",
+    "branches-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta aporta el número y el horario, que coinciden textualmente con el fragmento [1]. La fuente citada (channels-and-hours.html) contiene esas afirmaciones, por lo que está completamente fundamentada y es relevante para la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3254,
+    "prompt_tokens": 732,
+    "completion_tokens": 379
+   }
+  },
+  {
+   "case_id": "support-06",
+   "case_type": "answerable",
+   "answer": "Sí. La aplicación y la banca por internet están disponibles las 24 horas, todos los días, incluidos los fines de semana.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html",
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "app-faq.md",
+    "app-faq.md",
+    "branches-faq.md",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que la app y la banca por internet están disponibles las 24 horas, todos los días (incluidos fines de semana), lo cual coincide con channels-and-hours.html (“Disponibles las 24 horas, todos los días”) y con app-faq.md que indica servicios en la app las 24 horas. No hay afirmaciones adicionales ni contradicciones con los fragmentos.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3315,
+    "prompt_tokens": 736,
+    "completion_tokens": 245
+   }
+  }
+ ]
+}
