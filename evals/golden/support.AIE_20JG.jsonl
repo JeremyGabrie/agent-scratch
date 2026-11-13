@@ -1,0 +1,1 @@
+{"id": "support-AIE20JG", "type": "answerable", "history": [], "question": "Si abro una cuenta de ahorros en una agencia, ¿cuándo me entregan la tarjeta física?", "expected_intent": "product_question", "expected_sources": ["account-opening.md"], "forbidden_sources": [], "key_facts": ["en el momento"]}
