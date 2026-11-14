@@ -1,0 +1,1 @@
+{"id": "support-AIE38DH", "type": "follow_up", "history": ["¿Qué necesito para abrir una cuenta de ahorros?"], "question": "¿Y eso lo puedo hacer desde la app?", "expected_intent": "product_question", "expected_sources": ["account-opening.md", "app-faq.md"], "forbidden_sources": ["internal-notice-gym.md", "general-faq-2023.md"], "key_facts": ["10 minutos"]}
