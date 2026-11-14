@@ -39,8 +39,9 @@ CMD ["pytest", "-q", "-p", "no:cacheprovider"]
 
 
 FROM ${PYTHON_IMAGE} AS runtime
-# Valores de la imagen desplegada en Azure: el dominio del equipo y la Managed Identity (sin api key). En local mandan
-# .env y compose (env_file y environment pisan estos valores). Ver devops/DESPLIEGUE.md.
+# Valores de la imagen desplegada en Azure: el dominio del equipo, la Managed Identity (sin api key), AI Search (la imagen
+# no lleva data/, así que no hay índice local) y Agent Framework. En local mandan .env y compose (env_file y environment
+# pisan estos valores). Ver devops/DESPLIEGUE.md.
 ARG DOMAIN=fraud
 ARG GIT_SHA=desconocido
 LABEL org.opencontainers.image.revision=$GIT_SHA
@@ -51,7 +52,9 @@ COPY --from=builder --chown=app:app /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     DOMAIN=$DOMAIN \
-    FOUNDRY_AUTH_PROVIDER=entra_id
+    FOUNDRY_AUTH_PROVIDER=entra_id \
+    KNOWLEDGE_BASE=azure_search \
+    AGENT_RUNTIME=agent_framework
 USER app
 # 8000 (usuario sin privilegios: no puede abrir el 80). El ingress de la Container App debe apuntar a este puerto.
 EXPOSE 8000

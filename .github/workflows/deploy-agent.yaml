@@ -82,21 +82,30 @@ jobs:
         run: |
           docker build -f devops/Dockerfile --target runtime \
             --build-arg DOMAIN="$DOMAIN" --build-arg GIT_SHA="$GITHUB_SHA" -t "$IMAGE" .
-          # Como en Azure: Terraform da AZURE_OPENAI_ENDPOINT (no FOUNDRY_ENDPOINT); la key es de relleno (/health no usa Foundry).
+          # Como en Azure: Terraform da AZURE_OPENAI_ENDPOINT (no FOUNDRY_ENDPOINT); la key es de relleno (no se llama a Foundry).
+          # Hasta la sesión 3 el agente responde /health. Desde la 4 no arranca sin su base de conocimiento (y desde la 6 sin
+          # su MCP), y el CI no tiene ninguno: basta con que llegue a pedir AI Search. El arranque real lo confirma el paso
+          # "Esperar a que la revisión nueva esté activa".
           docker run -d --name agent-check -p 8000:8000 \
             -e AZURE_OPENAI_ENDPOINT=http://127.0.0.1:1 -e FOUNDRY_AUTH_PROVIDER=api_key -e FOUNDRY_API_KEY=ci "$IMAGE"
           ok=0
           for i in $(seq 1 15); do
             if curl -fsS http://127.0.0.1:8000/health; then ok=1; break; fi
+            [ "$(docker inspect -f '{{.State.Running}}' agent-check)" = true ] || break
             sleep 2
           done
-          if [ "$ok" != 1 ]; then
-            docker logs agent-check
-            echo "::error::El contenedor no respondió en /health."
+          logs=$(docker logs agent-check 2>&1)
+          if [ "$ok" = 1 ]; then
+            docker exec agent-check sh -c 'tr "\0" "\n" < /proc/1/environ' | grep -qx 'FOUNDRY_ENDPOINT=http://127.0.0.1:1' \
+              || { echo "::error::La imagen no copió AZURE_OPENAI_ENDPOINT a FOUNDRY_ENDPOINT."; exit 1; }
+          elif echo "$logs" | grep -q "Foundry auth provider" \
+            && echo "$logs" | grep -q "KNOWLEDGE_BASE=azure_search requiere SEARCH_ENDPOINT"; then
+            echo "El agente llegó a pedir AI Search: la imagen arranca."
+          else
+            echo "$logs"
+            echo "::error::El contenedor no respondió en /health ni llegó a pedir AI Search."
             exit 1
           fi
-          docker exec agent-check sh -c 'tr "\0" "\n" < /proc/1/environ' | grep -qx 'FOUNDRY_ENDPOINT=http://127.0.0.1:1' \
-            || { echo "::error::La imagen no copió AZURE_OPENAI_ENDPOINT a FOUNDRY_ENDPOINT."; exit 1; }
           docker rm -f agent-check
 
       - name: Publicar la imagen en el ACR (solo team-NN/)

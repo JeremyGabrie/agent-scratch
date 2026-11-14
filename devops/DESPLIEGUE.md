@@ -6,7 +6,7 @@ secretos: GitHub le da un token OIDC y Azure solo lo acepta si viene de **este r
 | Evento | Qué corre |
 |---|---|
 | Pull request, push a `main` o `solution`, tags `t*-v*` | tests en contenedor (stage `test`) |
-| Push a `main` (el merge de un PR) | tests, imagen `runtime`, comprobación de `/health`, publicación en el ACR (`team-NN/agent:<sha>`) y actualización de la Container App `ca-agent-chat-NN` (solo cambia la imagen) |
+| Push a `main` (el merge de un PR) | tests, imagen `runtime`, comprobación de arranque (`/health` hasta la sesión 3; desde la 4, que llegue a pedir AI Search), publicación en el ACR (`team-NN/agent:<sha>`) y actualización de la Container App `ca-agent-chat-NN` (solo cambia la imagen) |
 
 Cada integrante trabaja en su rama y abre un pull request; el líder hace el merge. Solo `main` despliega: una rama de trabajo no
 obtiene el token de Azure aunque modifique el workflow.
@@ -49,6 +49,8 @@ añadiera el CI. El agente las recibe con estos nombres:
 | `COSMOS_*`, `SEARCH_ENDPOINT`, `SEARCH_INDEX`, `MCP_URL`, `MCP_SCOPE`, `KEY_VAULT_URI` | Terraform | los bloques de T2, T3 y T4 (coinciden con el prefijo de su bloque de settings) |
 | `DOMAIN` | la imagen (`--build-arg DOMAIN`, variable `DOMAIN` del repo) | prompt del dominio |
 | `FOUNDRY_AUTH_PROVIDER=entra_id` | la imagen | sin api key: Managed Identity |
+| `KNOWLEDGE_BASE=azure_search` | la imagen | la imagen no lleva `data/`: el índice es el de AI Search (`SEARCH_*`) |
+| `AGENT_RUNTIME=agent_framework` | la imagen | el runtime con el que terminan las sesiones 7 y 8 |
 
 El contenedor escucha en el **8000** con un usuario sin privilegios; el ingress de la Container App apunta a ese puerto.
 
