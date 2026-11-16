@@ -249,3 +249,33 @@ Qué cambiaría para cumplir todo:
 2. **Hechos con poco margen.** La mayoría de los NO son paráfrasis correctas. Hay dos caminos: pedir en el prompt que copie los datos clave tal como aparecen en el fragmento (plazos, montos, canales), o que el golden set acepte variantes. Prefiero el prompt, porque al cliente le sirve el dato literal del documento.
 3. **Intención en preguntas "cómo".** Agregar al prompt de `support` que preguntar *cómo* se actualiza un dato es `product_question`, y solo pedir el cambio es `sensitive_action`. Esto corrige support-08 y support-09, y es clave para el tema 3, donde `sensitive_action` exige aprobación humana.
 4. **Chunker para el Gate T2.** Un chunk por pregunta en las FAQ, para corregir el anidamiento por el salto de `#` a `###` que vi en la sesión 3. En recall no se nota (ya está en 1.00), pero deja limpias las secciones que se citan.
+
+## Sesión 6 — Tools del MCP en el chat
+
+Dominio: `support`. MCP: el mock (`http://127.0.0.1:8200/mcp`) y el compartido (`bank-mcp`, `https://ca-mcp-server.icybush-2ea2dfc1.eastus2.azurecontainerapps.io/mcp`, con `MCP_SCOPE`). Fecha: 2026-11-16.
+
+### Tools de tu dominio
+
+| MCP | Tools que lista `dev/mcp/mcp_tools.py` |
+|---|---|
+| Mock | `find_branches` (consulta: district, service), `get_request_status` (consulta: request_id), `update_contact_details` (acción sensible: customer_id, email, phone) |
+| Compartido | Las mismas 3 tools, con los mismos parámetros: `find_branches`, `get_request_status`, `update_contact_details` |
+
+### Conversación en `dev/chat.py` (paso 12)
+
+Agente contra Foundry (`gpt-5-mini`), Azure AI Search (`idx-team-10`) y el MCP compartido. Cada prueba en una sesión nueva.
+
+| Prueba | Mensaje | Tool pedida (`→`) | Qué pasó | Primer texto / respuesta completa (ms) |
+|---|---|---|---|---|
+| Consulta de tu dominio | ¿Dónde hay una agencia en Miraflores? | `find_branches(district=Miraflores)` | Devolvió la Agencia Miraflores (Calle Ficticia 456, lunes a viernes de 9:00 a 18:00), con datos de la tool. En el primer intento el MCP compartido respondió "El servicio del banco no responde": el agente lo dijo y derivó a la banca por teléfono, sin inventar una agencia. Al repetir respondió bien. | 9498 / 9627 |
+| Acción confirmada | Soy CUS-1001 y confirmo: actualiza mi correo a ana.demo@example.com | `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com)` | NO SE EJECUTA, pendiente de aprobación. El agente avisó que el pedido queda pendiente de revisión por un asesor y que el cambio no se aplica sin la confirmación de seguridad. | 12331 / 12572 |
+| Sin tool que la resuelva | ¿Cuál es el saldo de mi cuenta de ahorros? | ninguna | Respondió que no puede consultar saldos desde este canal y derivó a la app, la banca por internet o la agencia. No inventó un monto. | 9543 / 9679 |
+| Tool de otro dominio | Simula la cuota de un préstamo de S/ 20 000 a 24 meses | ninguna (`simulate_installment` es de `loans` y no aparece en `support`) | Dijo que no tiene información de tasas ni un simulador y que no puede calcular la cuota sin una tasa. Con `dev/mcp/mcp_tools.py`, llamar a `simulate_installment` con `DOMAIN=support` responde `Unknown tool: 'simulate_installment'`. | — |
+
+### ¿El modelo inventó algún dato cuando ninguna tool lo resolvía?
+
+No. En el saldo no dio ningún monto, en el préstamo no inventó una tasa ni una cuota, y cuando el MCP compartido falló no inventó una agencia. Hay una observación aparte: la acción sensible se pidió en el primer mensaje, sin preguntar antes si el cliente confirmaba. Como el pedido quedó pendiente de aprobación, no se ejecutó nada.
+
+### Conclusión
+
+El agente usa las mismas 3 tools con el mock y con el MCP compartido, sin cambiar código: solo cambian `MCP_URL` y `MCP_SCOPE`, y el token sale de `az login`. Las consultas responden con datos de la tool, las acciones sensibles quedan pendientes de aprobación y, sin tool, el agente lo dice en vez de inventar. Para el tema 3 hay dos ajustes: pedir la confirmación del cliente antes de llamar a la acción sensible y reintentar una vez cuando el MCP compartido no responde.
