@@ -90,7 +90,6 @@ def create_server() -> FastMCP:
         return found("cards", card_id, "La tarjeta")
 
     # ---------- fees · tarifario y comisiones ----------
-
     @tool("fees", "fraud", read_only=True)
     async def get_transactions(customer_id: CustomerId,
                                limit: Annotated[int, Field(ge=1, le=50, description="Cuántos movimientos traer.")] = 10
@@ -117,7 +116,6 @@ def create_server() -> FastMCP:
         return RefundRequest(id=f"RFD-{next(ids)}", fee_id=fee_id, status="registered", reason=reason)
 
     # ---------- cards · tarjetas de crédito ----------
-
     @tool("cards", read_only=True)
     async def get_cards(customer_id: CustomerId) -> list[Card]:
         """Tarjetas del cliente, con su producto, últimos 4 dígitos y estado."""
@@ -145,7 +143,6 @@ def create_server() -> FastMCP:
                                          status="registered")
 
     # ---------- fraud · fraude, bloqueo y reclamos ----------
-
     @tool("fraud", read_only=True)
     async def get_claim_status(claim_id: Annotated[str, Field(description="Código del reclamo, por ejemplo CLM-5001.")]) -> Claim:
         """Estado de un reclamo y fecha límite de respuesta."""
@@ -177,7 +174,6 @@ def create_server() -> FastMCP:
         return claim
 
     # ---------- loans · préstamos ----------
-
     @tool("loans", read_only=True)
     async def simulate_installment(
         amount: Annotated[float, Field(gt=0, le=500_000, description="Monto del préstamo, en soles.")],
@@ -211,7 +207,6 @@ def create_server() -> FastMCP:
                                term_months=term_months, status="registered")
 
     # ---------- support · atención y FAQ ----------
-
     @tool("support", read_only=True)
     async def get_request_status(request_id: Annotated[str, Field(description="Código de la solicitud, por ejemplo REQ-6001.")]
                                  ) -> ServiceRequest:

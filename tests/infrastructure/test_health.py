@@ -10,9 +10,7 @@ def test_health():
     settings = Settings(_env_file=None, foundry=FoundrySettings(_env_file=None, auth_provider="api_key"))
     app = create_app(chat_model=FakeChatModel(), settings=settings, embedder=FakeEmbedder(), knowledge_base=FakeKnowledgeBase(),
                      tools=FakeTools([]))
-
     response = TestClient(app).get("/health")
-
     assert response.json() == {"status": "ok"}
 
 
@@ -23,7 +21,6 @@ def test_agent_does_not_start_with_an_empty_knowledge_base(tmp_path):
         ingest=IngestSettings(_env_file=None, data_dir=tmp_path),
         knowledge_base=KnowledgeBaseKind.LOCAL,
     )
-
     # sin knowledge_base inyectada, el agente arma la de la configuración: una base local recién creada, sin chunks
     with pytest.raises(RuntimeError, match="está vacía"):
         create_app(chat_model=FakeChatModel(), settings=settings, embedder=FakeEmbedder())

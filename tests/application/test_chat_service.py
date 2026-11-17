@@ -17,6 +17,8 @@ from agent.infrastructure.persistence.in_memory_store import InMemoryConversatio
 
 DEADLINES = Chunk(id="c1", content="Plazos\n\nSe responde en 15 días.", doc_type="regulation", section="Plazos", source="regulation.pdf")
 CHANNELS = Chunk(id="c2", content="Canales\n\nApp y agencias.", doc_type="faq", section="Canales", source="channels.html")
+
+
 FEES = ToolCall(id="call-1", name="get_charged_fees", arguments={"customer_id": "CUS-1001"})
 REFUND = ToolCall(id="call-2", name="request_fee_refund", arguments={"fee_id": "FEE-4002", "reason": "cobro indebido"})
 
@@ -41,7 +43,6 @@ def roles(messages) -> list[str]:
 
 def test_returns_typed_turn():
     turn = make_service(RecordingChatModel()).handle("s1", "Me robaron la tarjeta")
-
     assert turn.reply.intent is Intent.SENSITIVE_ACTION
     assert turn.usage.llm_calls == 1
 
@@ -94,7 +95,6 @@ def test_failed_turn_is_not_saved():
 
 def test_context_numbers_the_chunks_found():
     model = RecordingChatModel()
-
     make_service(model, chunks=[DEADLINES, CHANNELS]).handle("s1", "¿Cuál es el plazo?")
 
     context = model.calls[0][-2]["content"]
@@ -104,17 +104,13 @@ def test_context_numbers_the_chunks_found():
 
 def test_without_chunks_the_model_is_told_there_is_no_context():
     model = RecordingChatModel()
-
     make_service(model).handle("s1", "¿Cuál es el plazo?")
-
     assert model.calls[0][-2]["content"].startswith("No se encontraron fragmentos")
 
 
 def test_citations_come_only_from_fragments_that_exist():
     model = RecordingChatModel(sources=[2, 7, 2])
-
     turn = make_service(model, chunks=[DEADLINES, CHANNELS]).handle("s1", "¿Por dónde reclamo?")
-
     assert turn.citations == [Citation(source="channels.html", section="Canales", chunk_id="c2")]
 
 
@@ -155,7 +151,6 @@ def test_stream_cut_in_the_middle_does_not_save_the_turn():
 
 def test_the_model_asks_a_tool_and_answers_with_its_result():
     model, tools = ToolCallingChatModel(FEES), FakeTools()
-
     turn = make_service(model, tools=tools).handle("s1", "¿Qué comisiones me cobraron? Soy CUS-1001")
 
     assert tools.executed == ["get_charged_fees"]
@@ -170,7 +165,6 @@ def test_the_model_asks_a_tool_and_answers_with_its_result():
 
 def test_sensitive_actions_are_not_executed():
     tools = FakeTools()
-
     turn = make_service(ToolCallingChatModel(REFUND), tools=tools).handle("s1", "Devuélveme la comisión FEE-4002")
 
     assert tools.executed == []
@@ -181,7 +175,6 @@ def test_sensitive_actions_are_not_executed():
 def test_a_tool_that_does_not_exist_is_an_error_for_the_model():
     tools = FakeTools()
     unknown = ToolCall(id="call-3", name="delete_customer", arguments={})
-
     turn = make_service(ToolCallingChatModel(unknown), tools=tools).handle("s1", "Borra mis datos")
 
     assert tools.executed == []
@@ -190,9 +183,7 @@ def test_a_tool_that_does_not_exist_is_an_error_for_the_model():
 
 def test_without_tools_the_model_gets_no_tools_header():
     model = RecordingChatModel()
-
     make_service(model).handle("s1", "¿Cuál es el plazo?")
-
     assert {"role": "system", "content": TOOLS_HEADER} not in model.calls[0]
 
 
@@ -207,10 +198,8 @@ def test_stream_shows_each_tool_before_the_answer():
 def test_a_model_that_never_stops_asking_for_tools_is_cut():
     model = ToolCallingChatModel(FEES, rounds=99)
     service = make_service(model, tools=FakeTools())
-
     with pytest.raises(AgentError) as error:
         service.handle("s1", "¿Mis comisiones?")
-
     assert error.value.kind == ErrorKind.INVALID_OUTPUT
     assert len(model.received) == MAX_TOOL_ROUNDS
     assert service.store.get("s1") == []  # un turno cortado no se guarda

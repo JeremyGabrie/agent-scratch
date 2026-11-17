@@ -12,6 +12,7 @@ from agent.domain.errors import AgentError, ErrorKind
 from agent.domain.models import ToolCall, ToolDefinition, ToolResult, ToolStatus
 
 DOMAIN_HEADER = "X-Bank-Domain"
+
 TokenProvider = Callable[[], str]  # devuelve un token de Entra vigente; lo renueva solo
 
 

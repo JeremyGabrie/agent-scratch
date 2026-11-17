@@ -22,7 +22,6 @@ def test_definitions_mark_the_sensitive_actions():
 
 def test_a_query_returns_the_structured_content():
     call = ToolCall(id="c1", name="get_charged_fees", arguments={"customer_id": "CUS-1001"})
-
     result = McpTools(create_server()).call(call)
 
     assert result.status == ToolStatus.OK
@@ -31,7 +30,6 @@ def test_a_query_returns_the_structured_content():
 
 def test_a_business_error_goes_back_to_the_model():
     call = ToolCall(id="c1", name="get_cards", arguments={"customer_id": "CUS-9999"})
-
     result = McpTools(create_server()).call(call)
 
     assert result.status == ToolStatus.ERROR

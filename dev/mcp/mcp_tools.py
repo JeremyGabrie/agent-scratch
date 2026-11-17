@@ -1,7 +1,7 @@
 """Lista o llama tools del servidor MCP que dice el .env (MCP_URL y DOMAIN): el mock local o el compartido.
 
 Uso:
-  uv run python dev/mcp/mcp_tools.py                                                 lista las tools de tu dominio
+  uv run python dev/mcp/mcp_tools.py                                              lista las tools de tu dominio
   uv run python dev/mcp/mcp_tools.py get_transactions customer_id=CUS-1001 limit=2   llama una tool
 """
 
