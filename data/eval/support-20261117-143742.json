@@ -1,0 +1,59 @@
+{
+ "summary": {
+  "cases": 1,
+  "recall_at_k": 1.0,
+  "intent_accuracy": 1.0,
+  "sources_ok": 1.0,
+  "facts_ok": 0.0,
+  "groundedness": 5.0,
+  "relevance": 5.0,
+  "citation_correct": 1.0,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 0,
+  "prompt_tokens": 686,
+  "completion_tokens": 474
+ },
+ "results": [
+  {
+   "case_id": "support-AIE30RS",
+   "case_type": "answerable",
+   "answer": "Estos son los requisitos por trámite que tenemos registrados:\n\n- Constancia de no adeudo: solicitar por la aplicación o en agencia; sin costo; entrega en 2 días hábiles.\n- Carta de presentación bancaria: requiere ser cliente al menos 6 meses; costo S/25.\n- Cierre de cuenta: se realiza en agencia o en la aplicación; la cuenta debe tener saldo cero y no tener deudas asociadas.\n- Apertura de cuenta de ahorros: ser mayor de 18 años, DNI vigente, y contar con un número de celular y un correo propios.",
+   "intent": "product_question",
+   "cited_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "account-opening.md"
+   ],
+   "retrieved_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "service-glossary.md",
+    "account-opening.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Comparé cada afirmación de la respuesta con los fragmentos: la constancia de no adeudo (vía app/agencia, sin costo, entrega 2 días) está en [1]; la carta de presentación (6 meses como cliente, S/25) está en [2]; el cierre de cuenta (en agencia/app, saldo cero y sin deudas) está en [3]; y requisitos de apertura de cuenta de ahorros (mayor de 18, DNI vigente, celular y correo propios) están en [5]. Las fuentes citadas corresponden a los fragmentos que contienen esa información.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 6002,
+    "prompt_tokens": 686,
+    "completion_tokens": 474
+   }
+  }
+ ]
+}

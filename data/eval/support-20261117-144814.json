@@ -1,0 +1,17 @@
+{
+ "summary": {
+  "cases": 0,
+  "recall_at_k": 0.0,
+  "intent_accuracy": 0.0,
+  "sources_ok": 0.0,
+  "facts_ok": 0.0,
+  "groundedness": null,
+  "relevance": null,
+  "citation_correct": null,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 0,
+  "prompt_tokens": 0,
+  "completion_tokens": 0
+ },
+ "results": []
+}

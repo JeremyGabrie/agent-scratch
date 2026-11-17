@@ -1,0 +1,59 @@
+{
+ "summary": {
+  "cases": 1,
+  "recall_at_k": 1.0,
+  "intent_accuracy": 1.0,
+  "sources_ok": 1.0,
+  "facts_ok": 0.0,
+  "groundedness": 5.0,
+  "relevance": 5.0,
+  "citation_correct": 1.0,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 0,
+  "prompt_tokens": 686,
+  "completion_tokens": 724
+ },
+ "results": [
+  {
+   "case_id": "support-AIE30RS",
+   "case_type": "answerable",
+   "answer": "Estos son los requisitos por trámite según nuestro registro:\n\n- Constancia de no adeudo: se solicita por la aplicación o en agencia; no tiene costo; entrega en 2 días hábiles.\n- Carta de presentación bancaria: requiere 6 meses como cliente; costo S/25.\n- Cierre de cuenta: en agencia o en la aplicación; se requiere saldo cero y no tener deudas asociadas.\n- Apertura de cuenta de ahorros: ser mayor de 18 años, DNI vigente, y un número de celular y un correo propios.",
+   "intent": "product_question",
+   "cited_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "account-opening.md"
+   ],
+   "retrieved_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "service-glossary.md",
+    "account-opening.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta enumera los requisitos de cada trámite y cada afirmación coincide con los fragmentos proporcionados: constancia de no adeudo (fragmento 1), carta de presentación bancaria (fragmento 2), cierre de cuenta (fragmento 3) y apertura de cuenta de ahorros (fragmento 5). No hay información inventada y las fuentes citadas contienen las afirmaciones hechas.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 7946,
+    "prompt_tokens": 686,
+    "completion_tokens": 724
+   }
+  }
+ ]
+}

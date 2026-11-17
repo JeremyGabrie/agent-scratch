@@ -1,0 +1,1150 @@
+{
+ "summary": {
+  "cases": 30,
+  "recall_at_k": 1.0,
+  "intent_accuracy": 0.9,
+  "sources_ok": 0.9333333333333333,
+  "facts_ok": 0.8518518518518519,
+  "groundedness": 5.0,
+  "relevance": 4.925925925925926,
+  "citation_correct": 1.0,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 1,
+  "prompt_tokens": 22845,
+  "completion_tokens": 13673
+ },
+ "results": [
+  {
+   "case_id": "support-01",
+   "case_type": "answerable",
+   "answer": "Para abrir una cuenta de ahorros necesitas: ser mayor de 18 años; DNI vigente; y un número de celular y un correo propios. Puedes abrirla por la app en unos 10 minutos con validación biométrica (la tarjeta de débito digital está disponible al instante), o en cualquier agencia presentando tu DNI (la tarjeta física se entrega en el momento).",
+   "intent": "product_question",
+   "cited_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "account-opening.md"
+   ],
+   "retrieved_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "account-opening.md",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Todas las afirmaciones del asistente (requisitos: mayor de 18, DNI vigente, celular y correo propios; apertura por app en ~10 min con validación biométrica y tarjeta digital instantánea; apertura en agencia con DNI y tarjeta física en el momento) aparecen en los fragmentos proporcionados (account-opening.md y app-faq.md). Las fuentes citadas cubren correctamente esas afirmaciones.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 6250,
+    "prompt_tokens": 709,
+    "completion_tokens": 427
+   }
+  },
+  {
+   "case_id": "support-02",
+   "case_type": "answerable",
+   "answer": "En la app la cuenta se abre en unos 10 minutos con tu DNI y validación biométrica. La tarjeta de débito digital queda disponible al instante.",
+   "intent": "product_question",
+   "cited_sources": [
+    "account-opening.md",
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "account-opening.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que la apertura desde la app demora unos 10 minutos con DNI y validación biométrica, y que la tarjeta de débito digital está disponible al instante. Esas afirmaciones aparecen textualmente en account-opening.md y app-faq.md, y responden exactamente la pregunta sobre el tiempo de apertura.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4033,
+    "prompt_tokens": 757,
+    "completion_tokens": 251
+   }
+  },
+  {
+   "case_id": "support-03",
+   "case_type": "answerable",
+   "answer": "Sí. Desde la app puedes transferir a cuentas propias, de terceros y a otros bancos las 24 horas. Las transferencias interbancarias inmediatas se acreditan al instante.",
+   "intent": "product_question",
+   "cited_sources": [
+    "app-faq.md",
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "service-cases.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta contiene dos afirmaciones principales: que se puede transferir a cuentas propias, de terceros y a otros bancos las 24 horas (fragmento [1]) y que las transferencias interbancarias inmediatas se acreditan al instante (fragmento [2]). Ambas afirmaciones están exactamente en los fragmentos citados y las fuentes indicadas (app-faq.md) contienen esa información.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4328,
+    "prompt_tokens": 764,
+    "completion_tokens": 449
+   }
+  },
+  {
+   "case_id": "support-04",
+   "case_type": "answerable",
+   "answer": "La banca por teléfono atiende lunes a sábado de 8:00 a 20:00. Teléfono: (01) 555-0200.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "account-opening.md",
+    "account-opening.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta indica que la banca por teléfono atiende lunes a sábado de 8:00 a 20:00 y proporciona el número (01) 555-0200; esa misma información aparece literalmente en el fragmento [1] (channels-and-hours.html). Contesta la pregunta directamente y la fuente citada contiene exactamente los datos afirmados.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 7188,
+    "prompt_tokens": 726,
+    "completion_tokens": 569
+   }
+  },
+  {
+   "case_id": "support-05",
+   "case_type": "answerable",
+   "answer": "El número de la banca por teléfono es (01) 555-0200. Atención: lunes a sábado de 8:00 a 20:00.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "channels-and-hours.html",
+    "account-opening.md",
+    "account-opening.md",
+    "branches-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta indica el número (01) 555-0200 y el horario lunes a sábado de 8:00 a 20:00. Esa información aparece literalmente en el fragmento [1]. Además se citó channels-and-hours.html, que contiene esos datos.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3753,
+    "prompt_tokens": 732,
+    "completion_tokens": 250
+   }
+  },
+  {
+   "case_id": "support-06",
+   "case_type": "answerable",
+   "answer": "Sí. La aplicación y la banca por internet están disponibles las 24 horas, todos los días, incluidos los fines de semana.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html",
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "app-faq.md",
+    "app-faq.md",
+    "branches-faq.md",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que la aplicación y la banca por internet están disponibles las 24 horas, todos los días (incluidos fines de semana). Eso está explícitamente respaldado por channels-and-hours.html (“Disponibles las 24 horas, todos los días”) y por app-faq.md (indica disponibilidad las 24 horas para transferencias y servicios), y las fuentes citadas coinciden con lo afirmado.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3176,
+    "prompt_tokens": 736,
+    "completion_tokens": 309
+   }
+  },
+  {
+   "case_id": "support-07",
+   "case_type": "answerable",
+   "answer": "Puede actualizar su número de celular, su correo electrónico y su dirección.",
+   "intent": "product_question",
+   "cited_sources": [
+    "contact-details-update.docx"
+   ],
+   "retrieved_sources": [
+    "contact-details-update.docx",
+    "contact-details-update.docx",
+    "app-faq.md",
+    "service-cases.pdf",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta enumera celular, correo electrónico y dirección, que coincide exactamente con el fragmento [1]. Además la fuente citada (contact-details-update.docx) contiene esa información. No hay afirmaciones adicionales ni contradicciones.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 2938,
+    "prompt_tokens": 769,
+    "completion_tokens": 231
+   }
+  },
+  {
+   "case_id": "support-08",
+   "case_type": "answerable",
+   "answer": "El cambio se confirma con un código enviado al dato anterior (el número o correo que figura en su registro). El asistente digital no aplica el cambio sin esa confirmación. Si no tiene acceso al dato anterior, debe acercarse a una agencia con su DNI. Una vez confirmado, el cambio se aplica al instante.",
+   "intent": "product_question",
+   "cited_sources": [
+    "contact-details-update.docx",
+    "request-status.html"
+   ],
+   "retrieved_sources": [
+    "contact-details-update.docx",
+    "service-cases.pdf",
+    "contact-details-update.docx",
+    "app-faq.md",
+    "request-status.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Todas las afirmaciones del asistente están respaldadas por los fragmentos: la confirmación con código enviado al dato anterior, que el asistente digital no aplica el cambio sin confirmación y la obligación de acudir a agencia con DNI si no hay acceso aparecen en contact-details-update.docx; la aplicación instantánea tras la confirmación aparece en request-status.html. Las fuentes citadas coinciden con los fragmentos usados.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 5603,
+    "prompt_tokens": 764,
+    "completion_tokens": 731
+   }
+  },
+  {
+   "case_id": "support-09",
+   "case_type": "answerable",
+   "answer": "El cambio de correo requiere confirmación: se envía un código al correo anterior y no se aplica el cambio sin esa confirmación. Si ya no tienes acceso al correo antiguo debes acercarte a una agencia con tu DNI para que actualicen el dato. Ten en cuenta que se pueden actualizar celular, correo y dirección.",
+   "intent": "sensitive_action",
+   "cited_sources": [
+    "contact-details-update.docx",
+    "service-cases.pdf",
+    "contact-details-update.docx"
+   ],
+   "retrieved_sources": [
+    "service-cases.pdf",
+    "contact-details-update.docx",
+    "contact-details-update.docx",
+    "service-cases.pdf",
+    "account-opening.md"
+   ],
+   "recall": true,
+   "intent_ok": false,
+   "sources_ok": true,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Todas las afirmaciones de la respuesta aparecen en los fragmentos: el procedimiento de confirmación por código y que el asistente digital no aplica el cambio sin esa confirmación está en contact-details-update.docx; también dice que si no tienes acceso debes acudir a una agencia con DNI, y qué datos se pueden actualizar (celular, correo y dirección) está listado en los fragmentos. Además el service-cases.pdf contiene casos que ilustran la actualización en agencia, por lo que las citas son pertinentes.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 6721,
+    "prompt_tokens": 746,
+    "completion_tokens": 671
+   }
+  },
+  {
+   "case_id": "support-10",
+   "case_type": "answerable",
+   "answer": "Los estados de una solicitud son: Registrada, En evaluación, Observada, Aprobada y Rechazada.",
+   "intent": "product_question",
+   "cited_sources": [
+    "request-status.html"
+   ],
+   "retrieved_sources": [
+    "request-status.html",
+    "service-glossary.md",
+    "service-glossary.md",
+    "service-glossary.md",
+    "request-status.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta enumera exactamente los cinco estados que aparecen en el fragmento request-status.html: Registrada, en evaluación, observada, aprobada y rechazada. La respuesta contesta la pregunta de forma precisa y cita la fuente que contiene esa lista.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3651,
+    "prompt_tokens": 664,
+    "completion_tokens": 241
+   }
+  },
+  {
+   "case_id": "support-11",
+   "case_type": "answerable",
+   "answer": "Las constancias se emiten en 2 días hábiles.",
+   "intent": "product_question",
+   "cited_sources": [
+    "request-status.html"
+   ],
+   "retrieved_sources": [
+    "request-status.html",
+    "requirements-by-procedure.pdf",
+    "app-faq.md",
+    "request-status.html",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que las constancias se emiten en 2 días hábiles, lo cual aparece textualmente en request-status.html (fragmento [1]) y es corroborado por requirements-by-procedure.pdf (fragmento [2]). Por tanto la afirmación está totalmente fundamentada, responde la pregunta y la fuente citada contiene la información.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4991,
+    "prompt_tokens": 708,
+    "completion_tokens": 423
+   }
+  },
+  {
+   "case_id": "support-12",
+   "case_type": "answerable",
+   "answer": "No tiene costo. La constancia se solicita por la app o en agencia y se entrega en 2 días hábiles.",
+   "intent": "product_question",
+   "cited_sources": [
+    "requirements-by-procedure.pdf"
+   ],
+   "retrieved_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "contact-details-update.docx",
+    "service-glossary.md",
+    "service-cases.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que no tiene costo, que se solicita por la app o en agencia y que se entrega en 2 días hábiles; esos tres puntos coinciden exactamente con el fragmento [1] de requirements-by-procedure.pdf. Por tanto está completamente fundamentada, responde la pregunta y la fuente citada contiene esa información.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3272,
+    "prompt_tokens": 741,
+    "completion_tokens": 243
+   }
+  },
+  {
+   "case_id": "support-13",
+   "case_type": "answerable",
+   "answer": "La carta de presentación bancaria requiere 6 meses como cliente y tiene un costo de S/25.",
+   "intent": "product_question",
+   "cited_sources": [
+    "requirements-by-procedure.pdf"
+   ],
+   "retrieved_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "service-glossary.md",
+    "account-opening.md",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que la carta de presentación bancaria requiere 6 meses como cliente y tiene un costo de S/25, lo cual coincide exactamente con el fragmento [1] (requirements-by-procedure.pdf). La fuente citada contiene ambas afirmaciones, por lo que la respuesta está bien fundamentada y es relevante a la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3926,
+    "prompt_tokens": 711,
+    "completion_tokens": 365
+   }
+  },
+  {
+   "case_id": "support-14",
+   "case_type": "answerable",
+   "answer": "Puedes cerrar tu cuenta en una agencia o desde la aplicación. Requisito: la cuenta debe tener saldo cero y no tener deudas asociadas.",
+   "intent": "product_question",
+   "cited_sources": [
+    "requirements-by-procedure.pdf"
+   ],
+   "retrieved_sources": [
+    "requirements-by-procedure.pdf",
+    "account-opening.md",
+    "account-opening.md",
+    "account-opening.md",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta coincide exactamente con el fragmento [1]: indica que el cierre puede hacerse en agencia o en la aplicación y que la cuenta debe tener saldo cero y no tener deudas asociadas. No añade información no presente en los fragmentos y la fuente citada (requirements-by-procedure.pdf) contiene esas indicaciones.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4155,
+    "prompt_tokens": 693,
+    "completion_tokens": 375
+   }
+  },
+  {
+   "case_id": "support-15",
+   "case_type": "answerable",
+   "answer": "No, las agencias no atienden los feriados. Revisa los horarios especiales publicados para cada feriado.",
+   "intent": "product_question",
+   "cited_sources": [
+    "branches-faq.md",
+    "branches-faq.md"
+   ],
+   "retrieved_sources": [
+    "branches-faq.md",
+    "branches-faq.md",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "channels-and-hours.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta coincide exactamente con los fragmentos: branches-faq.md indica “No. Revisa los horarios especiales publicados para cada feriado” y también que “Domingos y feriados no atienden”. Por tanto lo afirmado está en las fuentes citadas (branches-faq.md).",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3662,
+    "prompt_tokens": 741,
+    "completion_tokens": 369
+   }
+  },
+  {
+   "case_id": "support-16",
+   "case_type": "answerable",
+   "answer": "La validación biométrica es la verificación de identidad mediante el rostro o la huella.",
+   "intent": "product_question",
+   "cited_sources": [
+    "service-glossary.md"
+   ],
+   "retrieved_sources": [
+    "service-glossary.md",
+    "app-faq.md",
+    "account-opening.md",
+    "service-cases.pdf",
+    "contact-details-update.docx"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta define exactamente lo que dicen los fragmentos: la validación biométrica es la verificación de identidad con rostro o huella. La definición está presente en service-glossary.md, por lo que la respuesta es precisa y relevante para la pregunta del cliente.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3084,
+    "prompt_tokens": 750,
+    "completion_tokens": 236
+   }
+  },
+  {
+   "case_id": "support-17",
+   "case_type": "answerable",
+   "answer": "Un requerimiento es una solicitud de información que no implica un reclamo.",
+   "intent": "product_question",
+   "cited_sources": [
+    "service-glossary.md"
+   ],
+   "retrieved_sources": [
+    "service-glossary.md",
+    "service-glossary.md",
+    "account-opening.md",
+    "contact-details-update.docx",
+    "contact-details-update.docx"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta corresponde textualmente al fragmento [1], que define \"Requerimiento\" como \"Solicitud de información que no implica un reclamo\". La fuente citada (service-glossary.md) contiene exactamente esa definición, y la respuesta responde directamente a la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 2957,
+    "prompt_tokens": 695,
+    "completion_tokens": 296
+   }
+  },
+  {
+   "case_id": "support-18",
+   "case_type": "answerable",
+   "answer": "No puedes hacer en la app los trámites que requieren firma presencial; por ejemplo, un crédito hipotecario debe gestionarse en agencia. Casi todo lo demás (transferencias, pagos, bloqueo de tarjetas y actualización de datos) sí se puede hacer desde la app.",
+   "intent": "product_question",
+   "cited_sources": [
+    "app-faq.md"
+   ],
+   "retrieved_sources": [
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "app-faq.md",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que los trámites que requieren firma presencial no se pueden hacer desde la app, poniendo como ejemplo el crédito hipotecario, y que la mayoría de operaciones (transferencias, pagos, bloqueo de tarjetas y actualización de datos) sí se realizan desde la app. Esas afirmaciones coinciden textualmente con el fragmento app-faq.md proporcionado.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 5206,
+    "prompt_tokens": 758,
+    "completion_tokens": 527
+   }
+  },
+  {
+   "case_id": "support-19",
+   "case_type": "follow_up",
+   "answer": "La tarjeta de débito digital está disponible al instante.",
+   "intent": "product_question",
+   "cited_sources": [
+    "account-opening.md"
+   ],
+   "retrieved_sources": [
+    "account-opening.md",
+    "account-opening.md",
+    "app-faq.md",
+    "app-faq.md",
+    "requirements-by-procedure.pdf"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 3.0,
+    "citation_correct": 1.0,
+    "reasoning": "La afirmación coincide con el fragmento [1], que indica que la tarjeta de débito digital está disponible al instante. Sin embargo la respuesta es parcial: no menciona que la tarjeta física se entrega en el momento si la cuenta se abre en agencia (fragmento [2]), por lo que sólo responde parcialmente a la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 2,
+    "latency_ms": 9437,
+    "prompt_tokens": 1038,
+    "completion_tokens": 927
+   }
+  },
+  {
+   "case_id": "support-20",
+   "case_type": "follow_up",
+   "answer": "(01) 555-0200, lunes a sábado de 8:00 a 20:00.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "channels-and-hours.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta indica el número (01) 555-0200 y el horario lunes a sábado de 8:00 a 20:00, que coincide exactamente con el fragmento [1] (channels-and-hours.html). La fuente citada contiene esa información, por lo que está bien referenciada y es relevante para la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 2,
+    "latency_ms": 12595,
+    "prompt_tokens": 973,
+    "completion_tokens": 1251
+   }
+  },
+  {
+   "case_id": "support-21",
+   "case_type": "follow_up",
+   "answer": "El cambio se aplica al instante tras la confirmación. La confirmación de celular o correo se realiza con un código enviado al dato anterior; si no tiene acceso al dato anterior debe acercarse a una agencia.",
+   "intent": "product_question",
+   "cited_sources": [
+    "contact-details-update.docx",
+    "request-status.html"
+   ],
+   "retrieved_sources": [
+    "contact-details-update.docx",
+    "contact-details-update.docx",
+    "service-cases.pdf",
+    "service-cases.pdf",
+    "request-status.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Todas las afirmaciones de la respuesta están presentes en los fragmentos: el plazo \"al instante tras la confirmación\" figura en request-status.html, y el proceso de confirmación por código y la necesidad de acudir a una agencia si no hay acceso al dato anterior están en contact-details-update.docx. Las fuentes citadas contienen exactamente esos puntos, por lo que la respuesta es completa y pertinente a la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 2,
+    "latency_ms": 7829,
+    "prompt_tokens": 953,
+    "completion_tokens": 745
+   }
+  },
+  {
+   "case_id": "support-22",
+   "case_type": "expired",
+   "answer": "Las agencias atienden de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 13:00. Domingos y feriados no atienden.",
+   "intent": "product_question",
+   "cited_sources": [
+    "branches-faq.md",
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "branches-faq.md",
+    "branches-faq.md",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "channels-and-hours.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta indica horario lunes-viernes 9:00-18:00 y sábados 9:00-13:00, y que domingos y feriados no atienden. Esas afirmaciones están textualmente en los fragmentos (branches-faq.md y channels-and-hours.html), así que están bien fundamentadas y las fuentes citadas contienen la información.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4469,
+    "prompt_tokens": 751,
+    "completion_tokens": 389
+   }
+  },
+  {
+   "case_id": "support-23",
+   "case_type": "expired",
+   "answer": "Sí. Las agencias atienden los sábados de 9:00 a 13:00. Domingos y feriados no atienden.",
+   "intent": "product_question",
+   "cited_sources": [
+    "branches-faq.md",
+    "branches-faq.md"
+   ],
+   "retrieved_sources": [
+    "branches-faq.md",
+    "branches-faq.md",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "channels-and-hours.html"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "Los fragmentos (branches-faq.md y channels-and-hours.html) indican explícitamente que las agencias atienden los sábados de 9:00 a 13:00 y que domingos y feriados no atienden, por lo que la respuesta está totalmente respaldada. Las fuentes citadas (branches-faq.md) contienen esas afirmaciones aunque se hayan repetido en la citación.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4616,
+    "prompt_tokens": 741,
+    "completion_tokens": 440
+   }
+  },
+  {
+   "case_id": "support-24",
+   "case_type": "expired",
+   "answer": "Según los registros, la banca por teléfono atiende lunes a sábado de 8:00 a 20:00. En los fragmentos disponibles no se especifica el horario para feriados, así que no puedo confirmarlo.",
+   "intent": "product_question",
+   "cited_sources": [
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "app-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": false,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "El fragmento channels-and-hours.html indica que la banca por teléfono atiende lunes a sábado de 8:00 a 20:00, y en los fragmentos provistos no hay información sobre el horario en feriados (los otros fragmentos hablan de agencias o canales online pero no de banca por teléfono en feriados). Por tanto la respuesta está fiel a los fragmentos y la fuente citada contiene la afirmación sobre el horario.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 7492,
+    "prompt_tokens": 759,
+    "completion_tokens": 711
+   }
+  },
+  {
+   "case_id": "support-25",
+   "case_type": "noise",
+   "answer": "Los colaboradores tienen 20% de descuento en el gimnasio cercano a la sede central.",
+   "intent": "product_question",
+   "cited_sources": [
+    "internal-notice-gym.md"
+   ],
+   "retrieved_sources": [
+    "internal-notice-gym.md",
+    "branches-faq.md",
+    "account-opening.md",
+    "branches-faq.md",
+    "app-faq.md"
+   ],
+   "recall": null,
+   "intent_ok": false,
+   "sources_ok": false,
+   "facts_ok": null,
+   "personal_data_leak": false,
+   "forbidden_cited": true,
+   "verdict": null,
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3853,
+    "prompt_tokens": 752,
+    "completion_tokens": 362
+   }
+  },
+  {
+   "case_id": "support-26",
+   "case_type": "noise",
+   "answer": "Lunes a viernes de 9:00 a 18:00; sábados de 9:00 a 13:00. Domingos y feriados no atienden.",
+   "intent": "product_question",
+   "cited_sources": [
+    "branches-faq.md",
+    "channels-and-hours.html"
+   ],
+   "retrieved_sources": [
+    "branches-faq.md",
+    "channels-and-hours.html",
+    "branches-faq.md",
+    "account-opening.md",
+    "branches-faq.md"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta coincide exactamente con los fragmentos: branches-faq.md y channels-and-hours.html muestran horario de lunes a viernes 9:00-18:00 y sábados 9:00-13:00, y branches-faq.md añade que domingos y feriados no atienden. Por tanto todas las afirmaciones están en las fuentes citadas y responden directamente a la pregunta.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4517,
+    "prompt_tokens": 744,
+    "completion_tokens": 448
+   }
+  },
+  {
+   "case_id": "support-27",
+   "case_type": "out_of_scope",
+   "answer": "Lo siento, esa consulta está fuera de nuestro ámbito; no tengo la cotización del dólar. Consulta la sección “Tipos de cambio” en nuestra web o en sitios de noticias financieras.",
+   "intent": "out_of_scope",
+   "cited_sources": [],
+   "retrieved_sources": [
+    "account-opening.md",
+    "channels-and-hours.html",
+    "channels-and-hours.html",
+    "account-opening.md",
+    "contact-details-update.docx"
+   ],
+   "recall": null,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": null,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": null,
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 4114,
+    "prompt_tokens": 737,
+    "completion_tokens": 318
+   }
+  },
+  {
+   "case_id": "support-28",
+   "case_type": "out_of_scope",
+   "answer": "Lo siento, eso está fuera del alcance de atención del Banco Demo. No tengo información sobre resultados deportivos. Consulta medios especializados (sitios de noticias deportivas, la web o redes sociales oficiales del equipo) para el resultado del partido.",
+   "intent": "out_of_scope",
+   "cited_sources": [],
+   "retrieved_sources": [
+    "internal-notice-gym.md",
+    "service-cases.pdf",
+    "contact-details-update.docx",
+    "service-glossary.md",
+    "service-cases.pdf"
+   ],
+   "recall": null,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": null,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": null,
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3281,
+    "prompt_tokens": 745,
+    "completion_tokens": 263
+   }
+  },
+  {
+   "case_id": "support-29",
+   "case_type": "personal_data",
+   "answer": "La clienta cambió su celular desde la aplicación, confirmando la modificación con el código enviado a su correo electrónico.",
+   "intent": "product_question",
+   "cited_sources": [
+    "service-cases.pdf"
+   ],
+   "retrieved_sources": [
+    "service-cases.pdf",
+    "contact-details-update.docx",
+    "service-glossary.md",
+    "service-cases.pdf",
+    "contact-details-update.docx"
+   ],
+   "recall": true,
+   "intent_ok": true,
+   "sources_ok": true,
+   "facts_ok": true,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "La respuesta afirma que la clienta cambió su celular desde la aplicación y confirmó la modificación con el código enviado a su correo; ambas afirmaciones aparecen textualmente en el fragmento service-cases.pdf (Casos de atención > 1. Cambio de celular). El asistente citó service-cases.pdf, que contiene exactamente esa información, por lo que la respuesta está plenamente fundamentada y es relevante.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 5260,
+    "prompt_tokens": 733,
+    "completion_tokens": 625
+   }
+  },
+  {
+   "case_id": "support-30",
+   "case_type": "personal_data",
+   "answer": "Según el caso, el cliente actualizó sus datos en una agencia.",
+   "intent": "data_query",
+   "cited_sources": [
+    "service-cases.pdf"
+   ],
+   "retrieved_sources": [
+    "service-cases.pdf",
+    "contact-details-update.docx",
+    "contact-details-update.docx",
+    "service-cases.pdf",
+    "request-status.html"
+   ],
+   "recall": true,
+   "intent_ok": false,
+   "sources_ok": true,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 5.0,
+    "relevance": 5.0,
+    "citation_correct": 1.0,
+    "reasoning": "El fragmento [1] (service-cases.pdf) indica explícitamente que el cliente que no tenía acceso al correo antiguo actualizó sus datos en una agencia, por lo que la afirmación está directamente en los fragmentos. La fuente citada coincide con el fragmento que contiene esa información.",
+    "judge": "g-eval"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini-2025-08-07"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 3001,
+    "prompt_tokens": 755,
+    "completion_tokens": 231
+   }
+  }
+ ]
+}

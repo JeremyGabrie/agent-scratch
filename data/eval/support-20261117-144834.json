@@ -1,0 +1,54 @@
+{
+ "summary": {
+  "cases": 1,
+  "recall_at_k": 0.0,
+  "intent_accuracy": 0.0,
+  "sources_ok": 0.0,
+  "facts_ok": 0.0,
+  "groundedness": 2.0,
+  "relevance": 2.0,
+  "citation_correct": 0.2,
+  "personal_data_leaks": 0,
+  "forbidden_citations": 0,
+  "prompt_tokens": 297,
+  "completion_tokens": 9
+ },
+ "results": [
+  {
+   "case_id": "support-AIE30RS",
+   "case_type": "answerable",
+   "answer": "[mock] intención detectada: out_of_scope.",
+   "intent": "out_of_scope",
+   "cited_sources": [],
+   "retrieved_sources": [
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "requirements-by-procedure.pdf",
+    "service-glossary.md",
+    "channels-and-hours.html"
+   ],
+   "recall": false,
+   "intent_ok": false,
+   "sources_ok": false,
+   "facts_ok": false,
+   "personal_data_leak": false,
+   "forbidden_cited": false,
+   "verdict": {
+    "groundedness": 2.0,
+    "relevance": 2.0,
+    "citation_correct": 0.2,
+    "reasoning": "",
+    "judge": "decision-1"
+   },
+   "usage": {
+    "models": [
+     "gpt-5-mini"
+    ],
+    "llm_calls": 1,
+    "latency_ms": 1332,
+    "prompt_tokens": 297,
+    "completion_tokens": 9
+   }
+  }
+ ]
+}

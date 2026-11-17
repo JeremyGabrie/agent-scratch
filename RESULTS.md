@@ -1,23 +1,33 @@
-# Comparación de tamaños de chunk
+# Resultados AIE-30RS
 
-| CONSULTA | top k| chunks
-|---:|---:|---:|
-| que datos necesito para abrir mi cuenta| 2 || 2 |
-| que datos necesito para abrir mi cuenta | 10 || 4 |
+## Sesión 5 — Comparar los dos jueces
 
----
+Mismo golden set (3x casos), mismo agente (`gpt-5-mini`), dos jueces.
 
-### con 2 ¿falta información con alguna respuesta?
+- Juez local (G-Eval): `data/eval/support-20261113-150810.json`
+- Juez azure_evaluation (decision-1): `data/eval/support-20261113-155127.json`
 
-si, la respuesta es mas corta si se da lo básico pero obvia mas detalle
+| Métrica | G-Eval (`JUDGE=local`) | decision-1 (`azure_evaluation`) |
+|---|---|---|
+| Apoyo (1–5) | 5.0/5| .0/5 |
+| Relevancia (1–5) | 5.0/5 | 2.0/5 |
+| Cita correcta (0–1) | 1.0 | 0.2 |
+| Tokens (entrada / salida) | 686,794 | 297,9 |
+| Tiempo de la corrida | 333s | 218s |
 
----
+### ¿Las notas de apoyo y de cita correcta van en la misma dirección?
 
-### con 10: ¿cuántos tokens de entrada más cuesta cada turno?, ¿aparecen fuentes que no vienen al caso?;
+Tanto la cita de apoyo y cita corren al máximo, es decir van a la misma direccion de G-eval 5
 
-con top k igual a 2 se tiene 591 token de entrada, 308 de salida a diferencia de con top k igual a 10 se tiene 1303 token de entrada y 774 token de salida. en ninguno se observa que aparecen fuentes qu eno vienen al caso
+### ¿Cuánto tardó cada corrida?
 
-### el valor que elije el equipo
+- Local (G-Eval): 333 segundos.
+- azure_evaluation (decision-1): 218 segundos
 
-se elige el valor de top k de igual a 10 ya que contiene la informacion necesaria y da mas valor agregado al entendmiemnto del usuario
+### Casos donde no coinciden
 
+Abriendo el detalle de G-Eval en el reasoning se observa que en relevancia coinciden ambos a 5
+
+### Conclusión
+
+Respecto a decision-1 es rápido y da probabilidades pero no da el detalle a comparacion de G-Eval es más lento pero da el detalle de porque falla
