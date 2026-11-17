@@ -1,0 +1,1 @@
+{"id": "support-AIE20JG", "type": "answerable", "history": [], "question": "¿Cuánto tiempo debo ser cliente del banco y cuánto cuesta solicitar una carta de presentación bancaria?", "expected_intent": "product_question", "expected_sources": ["requirements-by-procedure.pdf"], "forbidden_sources": [], "key_facts": ["6 meses como cliente", "S/ 25"]}
