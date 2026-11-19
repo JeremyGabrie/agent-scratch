@@ -1,45 +1,61 @@
+# Resultados · AIE_20JG (dominio `support`)
+
+## Sesión 2 · Servicio IA
+
+### Mediciones por mensaje
+
 | Mensaje | Intención | latency_ms | prompt_tokens | completion_tokens |
 |---|---|---:|---:|---:|
-| Hola, ¿cómo estás? | greeting | 2959 | 381 | 110 |
-| ¿Y eso lo puedo hacer desde la app? | product_question | 5498 | 429 | 540 |
-| ¿En qué estado está mi solicitud? | data_query | 3530 | 521 | 464 |
-| Quiero actualizar mi número de celular | sensitive_action | 7449 | 600 | 760 |
-| ¿A cuánto está el dólar hoy? | out_of_scope | 5025 | 776 | 271 |
+| Hola, ¿cómo estás? | `greeting` | 2959 | 381 | 110 |
+| ¿Y eso lo puedo hacer desde la app? | `product_question` | 5498 | 429 | 540 |
+| ¿En qué estado está mi solicitud? | `data_query` | 3530 | 521 | 464 |
+| Quiero actualizar mi número de celular | `sensitive_action` | 7449 | 600 | 760 |
+| ¿A cuánto está el dólar hoy? | `out_of_scope` | 5025 | 776 | 271 |
 
-## Comparación: gpt-5-mini vs. gpt-5-nano
+### Evaluación de trade-offs y decisiones
 
-En las ejecuciones registradas, `gpt-5-nano` tardó **7599 ms**, mientras que `gpt-5-mini` tardó **3530 ms**: en esta muestra, nano tomó **4069 ms más** (aproximadamente **2,15 veces** el tiempo de mini). Nano también generó más tokens de respuesta (**712 vs. 464**), lo que puede influir en la latencia.
+#### Trade-off 1: `gpt-5-mini` frente a `gpt-5-nano`
 
-**Conclusión:** con esta muestra no hay evidencia de una ventaja de latencia de nano; mini fue más rápido en la ejecución observada. Para elegir el modelo de clasificación, conviene probar ambos con las mismas consultas y medir latencia y exactitud sobre un conjunto etiquetado. La calidad no se puede determinar solo con estos logs.
+En la comparación registrada, `gpt-5-nano` tardó **7599 ms** y `gpt-5-mini`, **3530 ms**. Nano demoró **4069 ms más**, es decir, alrededor de **2,15 veces** el tiempo de mini. También generó más tokens de respuesta (**712 frente a 464**).
 
-## Efecto de `MAX_TURNS` en costo e historial
+En esta muestra, mini fue más rápido. Los datos no permiten afirmar que nano clasifique mejor o peor, porque para eso habría que revisar la exactitud de ambos modelos sobre las mismas consultas etiquetadas.
 
-En la conversación de prueba con `MAX_TURNS=4`, el usuario indicó su nombre al inicio (“hola soy jeremy”), pero en la quinta respuesta el agente contestó que no podía ver su nombre. Esto es consistente con que el historial anterior haya quedado fuera del contexto disponible; bajar el límite puede afectar la continuidad y hacer que el agente pierda datos que el usuario ya proporcionó.
+**Decisión:** no se justifica elegir nano por una supuesta ventaja de velocidad. La comparación favorece a mini en latencia; la calidad de clasificación debe valorarse con un conjunto común de preguntas y no solo con estos registros.
 
-**Conclusión:** `MAX_TURNS=4` mostró un posible costo menor por menor contexto, pero también una pérdida concreta de continuidad en la quinta respuesta. Con los datos actuales no se puede afirmar cuánto se ahorra al mes ni si el ahorro compensa ese efecto.
+#### Trade-off 2: `MAX_TURNS=4` frente al historial completo
 
-## Enrutamiento por intención: `gpt-5-nano` y `gpt-5-mini`
+En la prueba con `MAX_TURNS=4`, el usuario dijo su nombre al inicio (“hola soy jeremy”), pero en la quinta respuesta el agente indicó que no podía verlo. El resultado muestra que, al limitar el historial, un dato compartido al comienzo puede quedar fuera del contexto que recibe el modelo.
 
-**Recomendación:** comparar ambas configuraciones con las mismas conversaciones etiquetadas. Medir exactitud por intención, errores especialmente en `sensitive_action`, latencia total y tokens/costo por conversación. Mantener el enrutamiento híbrido solo si nano cumple el umbral de calidad y produce un ahorro medible; si no, usar mini para clasificar o responder esas intenciones.
+El límite más bajo reduce la cantidad de historial disponible, pero en esta conversación afectó la continuidad. No se registraron mediciones suficientes para calcular un ahorro mensual ni para determinar si compensaría esa pérdida de contexto.
 
-## Comparación del tamaño de chunks
+**Conclusión:** en esta prueba, `MAX_TURNS=4` no conservó información relevante de los primeros turnos. La reducción del historial puede contener el tamaño del contexto, pero también puede hacer que el agente pierda datos que el usuario ya había proporcionado.
 
-| Tamaño máximo | Chunks generados |
-|---:|---:|
-| 250 caracteres | 30 |
-| 1500 caracteres | 28 |
+#### Enrutamiento por intención: `gpt-5-nano` y `gpt-5-mini`
 
-Con el límite de **250 caracteres** se obtuvieron 30 chunks; con **1500 caracteres**, 28. En este corpus la diferencia fue de 2 chunks, porque el chunker también organiza el contenido por secciones y no depende únicamente del límite de caracteres.
+Para el enrutamiento por intención, lo importante es que una clasificación equivocada no active una búsqueda innecesaria ni permita tratar una acción sensible como una consulta normal. Con los datos actuales, no hay una ventaja clara que justifique incorporar nano al flujo. La comparación entre modelos debe considerar la exactitud por intención —en especial `sensitive_action`— junto con la latencia y los tokens por conversación. Hasta contar con esa comparación, los resultados observados respaldan mantener mini.
 
-**Qué se gana con chunks más pequeños:** cada fragmento tiende a tratar un tema más específico, lo que puede mejorar la precisión al recuperar información relevante para una pregunta concreta.
+## Sesión 3 · Ingesta
 
-**Qué se pierde:** al dividir más el contenido, una regla y su excepción pueden quedar en fragmentos distintos. Si se recupera solo uno, puede faltar contexto y la respuesta quedar incompleta.
+### Tamaño de chunk
 
-**Conclusión:** un tamaño menor favorece la precisión temática y uno mayor conserva más contexto en cada fragmento. Además de contar chunks, conviene evaluar las respuestas recuperadas, sobre todo cuando dependen de reglas, excepciones o condiciones.
+| Tamaño máximo | Chunks generados | Qué cambia |
+|---:|---:|---|
+| 250 caracteres | 30 | Genera dos chunks más que la configuración de 1500 caracteres. |
+| 1500 caracteres | 28 | Mantiene los fragmentos organizados por secciones del corpus. |
 
-## Preguntas de evaluación para `support`
+Con un máximo de **250 caracteres** se generaron 30 chunks y con **1500 caracteres**, 28. La diferencia fue de solo dos fragmentos porque el chunker también respeta la separación por secciones del corpus; el límite de caracteres no es el único factor.
 
-| Tipo | Pregunta | Qué debe pasar |
+Los chunks pequeños dejan cada fragmento más enfocado y pueden ayudar a recuperar un tema concreto. A cambio, una regla y su excepción podrían quedar separadas. Los chunks más grandes conservan mejor el contexto, aunque pueden incluir información adicional que no siempre se necesita para responder.
+
+En este corpus, la diferencia en cantidad de chunks fue reducida. Por eso, además de contar fragmentos, la comparación debe considerar si la respuesta recupera todos los datos necesarios, especialmente cuando una condición depende de una excepción.
+
+## Sesión 4 · Retrieval
+
+Agente con recuperación RAG y `top_k=5`. Se evaluaron preguntas de reglas del corpus, seguimiento conversacional, términos exactos, vigencia documental y consultas fuera del corpus. También se comparó la búsqueda local con Azure AI Search.
+
+### Las cinco preguntas de evaluación (`top_k=5`)
+
+| Tipo | Pregunta | Resultado esperado |
 |---|---|---|
 | Regla del corpus | ¿Cuánto tardan en emitirse las constancias y cartas? | Responde que tardan 2 días hábiles y cita `request-status.html`. |
 | Seguimiento | **Turno 1:** ¿Puedo abrir una cuenta desde la app? **Turno 2:** ¿Qué necesito para hacerlo? | Entiende que el seguimiento se refiere a abrir la cuenta desde la app; indica los requisitos (ser mayor de 18 años, DNI vigente, celular y correo propios) y la validación biométrica. Cita `account-opening.md` y/o `app-faq.md`. |
@@ -47,11 +63,11 @@ Con el límite de **250 caracteres** se obtuvieron 30 chunks; con **1500 caracte
 | Documento vencido | ¿Cuál es el horario actual de atención en agencias? | Responde de lunes a viernes de 9:00 a 18:00 y sábados de 9:00 a 13:00; cita `branches-faq.md`. No presenta como vigente el horario de `general-faq-2023.md`, vencido el 31-12-2024. |
 | Fuera del corpus | ¿A cuánto está el dólar hoy? | Clasifica como `out_of_scope` y responde que no puede determinarlo con la información disponible, sin citar fuentes del corpus. |
 
-## Resultados de evaluación de `support`
+### Resultados de evaluación
 
 **Configuración:** recuperación con `top_k=5`.
 
-| Pregunta | Intención | Latencia primer texto (ms) | Latencia completa (ms) | Tokens entrada | Tokens salida | Resultado |
+| Pregunta | Intención | Primer texto (ms) | Respuesta completa (ms) | Tokens de entrada | Tokens de salida | Resultado |
 |---|---|---:|---:|---:|---:|---|
 | ¿Cuánto tardan en emitirse las constancias y cartas? | `product_question` | 9306 | 9342 | 718 | 233 | Correcto: 2 días hábiles. Cita `request-status.html`. |
 | ¿Puedo abrir una cuenta desde la app? | `product_question` | 11324 | 11447 | 966 | 944 | Correcto: apertura en unos 10 minutos con DNI y validación biométrica; tarjeta digital al instante. Cita `app-faq.md` y `account-opening.md`. |
@@ -59,9 +75,15 @@ Con el límite de **250 caracteres** se obtuvieron 30 chunks; con **1500 caracte
 | ¿Cuál es el horario actual de atención en agencias? | `product_question` | 10628 | 10759 | 1160 | 925 | Correcto: lunes a viernes de 9:00 a 18:00, sábados de 9:00 a 13:00; domingos y feriados no atienden. Cita `branches-faq.md`. |
 | ¿A cuánto está el dólar hoy? | `out_of_scope` | 11573 | 11713 | 1269 | 1012 | Clasificación correcta; responde que no ofrece cotizaciones en tiempo real y orienta a canales del banco. Sin fuentes citadas. |
 
-Las cinco consultas obtuvieron la intención esperada y, cuando correspondía, una fuente pertinente del corpus. La consulta fuera de alcance no citó fuentes. En esta muestra, el primer texto tardó entre **9306 y 11573 ms** y la respuesta completa entre **9342 y 11713 ms**; estas mediciones son observaciones de una ejecución, no una comparación estadística.
+En las cinco consultas se obtuvo la intención esperada. Las preguntas que dependían del corpus se respondieron con la fuente correspondiente y la consulta del dólar quedó fuera del alcance, sin citas. El primer texto apareció entre **9306 y 11573 ms** y las respuestas completas tardaron entre **9342 y 11713 ms**. Son tiempos de las ejecuciones registradas y sirven como referencia de esta prueba, no como una medición estadística.
 
-## Comparación de `top_k`: 2, 5 y 10
+### Observaciones
+
+Las preguntas que tenían respuesta en el corpus recuperaron documentos pertinentes. La consulta sobre el dólar se clasificó como `out_of_scope` y el agente indicó que no podía ofrecer una cotización en tiempo real, sin citar documentos que no correspondían.
+
+En algunas preguntas hubo poca diferencia entre el primer texto y la respuesta completa. En otras, el tiempo fue mayor; al tratarse de ejecuciones individuales, los valores permiten describir lo ocurrido en la prueba, pero no establecer una tendencia general.
+
+### Comparación de `SEARCH_TOP_K`
 
 Se compararon las dos preguntas con resultados disponibles para los tres valores. Los tokens de entrada dependen de la ejecución, así que las diferencias son las observadas en estas muestras.
 
@@ -70,13 +92,15 @@ Se compararon las dos preguntas con resultados disponibles para los tres valores
 | ¿Cuánto tardan en emitirse las constancias y cartas? | 593 | 718 | 966 | +373 | +248 |
 | ¿Puedo abrir una cuenta desde la app? | 826 | 966 | 1189 | +363 | +223 |
 
-Con `top_k=2`, la respuesta sobre el plazo fue correcta, pero también apareció `requirements-by-procedure.pdf`, que trata los requisitos de una constancia y no aporta al plazo de emisión. En la pregunta sobre abrir una cuenta, `top_k=2` devolvió solo `app-faq.md`; `top_k=5` y `top_k=10` devolvieron también `account-opening.md`, con información complementaria. En estos resultados de `top_k=10` no se observan fuentes ajenas al tema: las fuentes citadas respaldan las respuestas.
+- Con `top_k=2`, la respuesta sobre el plazo fue correcta, pero también apareció `requirements-by-procedure.pdf`, que trata los requisitos de una constancia y no aporta al plazo de emisión.
+- En la pregunta sobre abrir una cuenta, `top_k=2` devolvió solo `app-faq.md`; `top_k=5` y `top_k=10` devolvieron también `account-opening.md`, con información complementaria.
+- En estos resultados de `top_k=10` no se observan fuentes ajenas al tema: las fuentes citadas respaldan las respuestas.
 
 **Elección del equipo: `top_k=5`.** En las muestras disponibles, recupera fuentes pertinentes y suficientes para ambas respuestas. Frente a `top_k=2`, aporta la fuente complementaria sobre apertura de cuenta; frente a `top_k=10`, conserva las fuentes relevantes observadas con 248 y 223 tokens de entrada menos por turno, respectivamente. Es un balance razonable entre contexto recuperado y costo; conviene reevaluarlo si cambian el corpus o las preguntas.
 
-## Comparación: búsqueda local (`top_k=5`) vs. Azure AI Search
+### Búsqueda local frente a Azure AI Search
 
-| Pregunta | Fuentes en local (`top_k=5`) | Fuentes en AI Search | ¿Mejoró frente al resultado local? | Respuesta completa (local / AI Search) |
+| Pregunta | Fuentes en local (`top_k=5`) | Fuentes en AI Search | Resultado frente a local | Respuesta completa (local / AI Search) |
 |---|---|---|---|---:|
 | ¿Cuánto tardan en emitirse las constancias y cartas? | `request-status.html` | `request-status.html` | **Sí, en latencia:** 475 ms más rápida (9342 → 8867 ms). Misma fuente y respuesta correcta. | 9342 / 8867 ms |
 | ¿Puedo abrir una cuenta desde la app? | `app-faq.md`, `account-opening.md` | `app-faq.md`, `account-opening.md` | **Sí, en latencia:** 2443 ms más rápida (11447 → 9004 ms). Conserva ambas fuentes pertinentes y la respuesta incluye la disponibilidad inmediata de la tarjeta digital. | 11447 / 9004 ms |
@@ -84,51 +108,13 @@ Con `top_k=2`, la respuesta sobre el plazo fue correcta, pero también apareció
 | ¿Cuál es el horario actual de atención en agencias? | `branches-faq.md` | `channels-and-hours.html` | **Mixto:** AI Search recuperó una fuente directamente pertinente sobre canales y horarios, pero la respuesta omitió que domingos y feriados no atienden; además tardó 68 ms más (10759 → 10827 ms). | 10759 / 10827 ms |
 | ¿A cuánto está el dólar hoy? | Sin fuentes | Sin fuentes | **No aplica al reranker:** se clasificó como `out_of_scope` en ambos casos. Azure respondió 4611 ms más rápido (11713 → 7102 ms). | 11713 / 7102 ms |
 
-**Balance:** frente a la ejecución local con `top_k=5`, Azure AI Search fue más rápido en tres de las cuatro preguntas dentro del corpus y mantuvo respuestas y fuentes pertinentes en esas consultas; en la de horarios cambió a una fuente relevante, pero la respuesta perdió el detalle de domingos y feriados. La pregunta fuera del corpus también fue más rápida, aunque no permite evaluar el reranker. Estos son resultados observados de ejecuciones individuales: muestran mejoras en algunos turnos, pero no aíslan cuánto de la diferencia se debe al reranker frente a Azure AI Search u otras variaciones entre ejecuciones.
+**Balance:** Azure AI Search terminó antes en tres de las cuatro preguntas que sí dependían del corpus. En esas consultas mantuvo fuentes pertinentes; en la de horarios recuperó `channels-and-hours.html`, pero la respuesta dejó fuera el detalle de domingos y feriados. La consulta del dólar también fue más rápida, aunque no sirve para medir el reranker porque se resolvió como `out_of_scope`. Como se comparan ejecuciones individuales, las diferencias de tiempo no se pueden atribuir únicamente al buscador o al reranker.
 
-## Comparación de cambios de retrieval (referencia AIE_16FL)
+## Sesión 5 · Calidad del RAG
 
-La siguiente comparación corresponde a las corridas de 31 casos de AIE_16FL compartidas aparte. Se
-mantiene separada de las métricas AIE_20JG de 30 casos y de su evaluación individual.
+El golden set de `support` se evaluó con G-Eval sobre 30 casos. Las métricas de esta sección corresponden a esa corrida de AIE_20JG. El caso que agregaste se describe aparte para que su resultado no se mezcle con los indicadores de los 30 casos.
 
-| Cambio | Configuración / ejecución | Recall@5 | Intención | Fuentes | Hechos | Apoyo / 5 | Tokens de entrada | Citas prohibidas | Tiempo |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Línea base | Azure AI Search; chunks 1500; `SEARCH_TOP_K=5` | 1.00 | 0.84 | 0.90 | 0.82 | 5.0 | 23,301 | 1 | 334 s |
-| Chunks más chicos | `$env:INGEST_CHUNK_MAX_CHARS = "800"`; `uv run ingest build`; `uv run ingest publish` | 1.00 | 0.84 | 0.90 | 0.75 | 5.0 | 23,356 | 1 | 356 s |
-| Menos fragmentos | `$env:SEARCH_TOP_K = "3"`; volver a ejecutar la evaluación | 1.00 | 0.81 | 0.94 | 0.79 | 5.0 | 20,700 | 1 | 327 s |
-| Más fragmentos | `$env:SEARCH_TOP_K = "8"`; volver a ejecutar la evaluación | 1.00 | 0.84 | 0.94 | 0.75 | 5.0 | 27,626 | 1 | 366 s |
-| Base local, sin reranker | `uv run ingest publish --target local`; `$env:KNOWLEDGE_BASE = "local"` | 1.00 | 0.87 | 0.94 | 0.82 | 5.0 | 23,600 | 1 | 355 s |
-
-**Qué muestran y qué mirar al probar cada cambio:**
-
-- **Chunks de 800:** el corpus produjo los mismos 28 chunks que con 1500, así que el índice
-  prácticamente no cambió. Recall, intención y fuentes quedaron iguales; la caída de hechos
-  (0.82 → 0.75) no demuestra una regresión causada por chunking en una sola corrida.
-- **`SEARCH_TOP_K=3`:** mantuvo recall@5 en 1.00 y usó 2,601 tokens de entrada menos que la línea
-  base (aprox. 11 %). Hechos y apoyo se mantuvieron cerca, aunque la intención bajó de 0.84 a 0.81.
-  Es una alternativa para repetir y comparar tokens, hechos y recall.
-- **`SEARCH_TOP_K=8`:** añadió 4,325 tokens de entrada (aprox. 19 %) sin mejorar hechos ni apoyo;
-  fuentes subió de 0.90 a 0.94, pero la cita prohibida continuó. Hay más contexto, no una mejora
-  consistente en la respuesta.
-- **Base local sin reranker:** recall y hechos igualaron la línea base; fuentes e intención fueron
-  algo mayores en esta corrida. Como solo hay una corrida por configuración y también cambia el
-  modo de búsqueda, no se puede atribuir esa diferencia únicamente a quitar el reranker ni concluir
-  que no aporta en general.
-- **Citas prohibidas:** se mantuvieron en 1 en las cinco configuraciones. Cambiar chunking o
-  `SEARCH_TOP_K` no resolvió ese problema; el aviso interno debe filtrarse en la ingesta y/o
-  bloquearse explícitamente en las reglas de fuentes.
-
-La decisión reportada fue conservar la línea base (`azure_search`, chunks 1500,
-`SEARCH_TOP_K=5`): `top_k=3` ahorra tokens, pero con 31 casos la diferencia de calidad observada no
-es suficiente para cambiar el valor sin repetir la evaluación. Al repetir, comparar una variable a
-la vez y registrar recall, hechos, tokens de entrada, citas prohibidas y tiempo.
-
-# Sesión 5 - Calidad del RAG (AIE_20JG)
-
-## Resumen de la corrida
-
-Evaluación de 30 casos del dominio `support` con el juez G-Eval. Las métricas se transcriben del
-resumen de la corrida proporcionado; no se mezclan con resultados de otras sesiones.
+### Línea base (30 casos)
 
 | Métrica | Resultado |
 |---|---:|
@@ -145,7 +131,7 @@ resumen de la corrida proporcionado; no se mezclan con resultados de otras sesio
 | Tokens de entrada | 22,584 |
 | Tokens de salida | 14,294 |
 
-## Casos a revisar
+### Casos a revisar
 
 | Caso | Resultado | Observación |
 |---|---|---|
@@ -157,75 +143,37 @@ resumen de la corrida proporcionado; no se mezclan con resultados de otras sesio
 | `support-25` | Intención y fuentes: NO; cita prohibida | Respondió sobre un beneficio interno para colaboradores y citó `internal-notice-gym.md`. |
 | `support-30` | Intención y hechos: NO | Clasificó la consulta sobre el caso de un cliente como `data_query`; G-Eval, sin embargo, calificó la respuesta como respaldada y pertinente. |
 
-## Diagnóstico según los criterios de revisión
+### Lectura de los resultados
 
-1. **`recall` en NO:** no hay casos aplicables con `recall: false`. El resumen da recall@k de 1.00.
-   `support-25`, `support-27` y `support-28` tienen `recall: null` por ser ruido o fuera de alcance;
-   no son fallos de búsqueda. No se justifica cambiar chunking ni `SEARCH_TOP_K` por esta corrida.
-2. **Recall OK y hechos en NO:** ocurre en `support-07`, `support-08`, `support-09`, `support-20`,
-   `support-24` y `support-30`. La fuente esperada sí se recuperó, así que el problema apunta al uso
-   de la evidencia y, en `support-08`, `-09` y `-30`, también a la intención. Revisar prompt/contexto
-   antes que chunking o `SEARCH_TOP_K`. En `support-07` y `support-30`, G-Eval contradice el control
-   automático; conviene validar también la regla de evaluación.
-3. **Fuentes NO en `expired` o `noise`:** sucede en `support-24` (`expired`) y `support-25`
-   (`noise`), pero por motivos distintos. En `support-25` sí se citó la fuente interna prohibida
-   `internal-notice-gym.md`; debe excluirse de la ingesta (y comprobarse el filtro de fuentes).
-   En `support-24`, `forbidden_cited` es `false`: no citó una fuente marcada como prohibida, pero citó
-   `channels-and-hours.html` en lugar de `branches-faq.md`, que sí estaba entre los fragmentos
-   recuperados. Es un fallo de selección de evidencia/cita, no evidencia de que se haya citado el
-   documento vencido.
-4. **FUGA:** el resumen registra 0 y los 30 casos tienen `personal_data_leak: false`. No se detectaron
-   fugas en esta corrida; no hay una redacción concreta que corregir por este criterio.
+El recall@k de **1.00** indica que las fuentes esperadas estuvieron disponibles en la recuperación. Por eso, los casos marcados con hechos incorrectos no apuntan a una falta general de recuperación, sino a cómo se utilizó la evidencia en la respuesta y, en algunos casos, a la clasificación de intención.
 
-Como resultado fuera del dominio, `support-27` respondió correctamente sin citar fuentes. La
-prioridad de corrección es retirar el aviso interno del índice y mejorar el prompt/contexto para
-intención y selección de evidencia; los resultados no señalan un problema de recall.
+En `support-07` y `support-30`, el control automático no coincidió con la valoración de G-Eval: el juez consideró que las respuestas estaban respaldadas, aunque la regla de hechos las marcó como incorrectas. En esos casos también influye cómo el evaluador reconoce respuestas expresadas con otras palabras.
 
-## Alcance
+Los casos `support-24` y `support-25` muestran problemas distintos en fuentes. En `support-24`, la respuesta se apoyó en `channels-and-hours.html` y dejó fuera el horario especial de feriados, aunque `branches-faq.md` estaba entre los fragmentos recuperados. En `support-25`, sí se utilizó `internal-notice-gym.md`, que es una fuente interna y no corresponde a respuestas para clientes.
 
-Este informe refleja exclusivamente el JSON de 30 casos de AIE_20JG. La configuración de ejecución,
-el tiempo total y los resultados de otras corridas no estaban incluidos en los datos proporcionados.
+Por otro lado, `support-27` respondió la consulta fuera del dominio sin citar fuentes. Tampoco se registraron fugas de datos personales: los 30 casos tienen `personal_data_leak: false`. En conjunto, la corrida muestra una recuperación sólida; los errores detectados se concentran en la selección y uso de fuentes, en algunas clasificaciones y en la forma de evaluar paráfrasis.
 
-## Resultado del caso individual · `support-AIE20JG`
+### Mi caso del golden set
 
-Esta evaluación de un solo caso se registra por separado y no se suma a las métricas de la corrida
-anterior de 30 casos.
+`evals/golden/support.AIE_20JG.jsonl`: `support-AIE20JG`, de tipo `answerable`, con `history: []`. La pregunta es: **“¿Cuánto tiempo debo ser cliente del banco y cuánto cuesta solicitar una carta de presentación bancaria?”** La intención esperada es `product_question`; la fuente que debe respaldar la respuesta es `requirements-by-procedure.pdf`. Los dos datos que debe incluir son **6 meses como cliente** y **S/ 25**. El caso no define fuentes prohibidas (`forbidden_sources: []`).
 
-| Métrica | Resultado |
-|---|---:|
-| Casos | 1 |
-| Recall@k | 1.00 |
-| Exactitud de intención | 1.00 |
-| Fuentes correctas | 1.00 |
-| Hechos correctos | 1.00 |
-| Fundamentación | 5.0/5 |
-| Relevancia | 5.0/5 |
-| Cita correcta | 1.00 |
-| Fugas de datos personales | 0 |
-| Citas de fuentes prohibidas | 0 |
-| Tokens de entrada | 722 |
-| Tokens de salida | 173 |
+- **Por qué lo elegí:** reúne dos datos de un mismo procedimiento en una sola pregunta. Sirve para comprobar que el agente encuentre el documento de requisitos y no omita ni la antigüedad mínima ni el costo de la carta.
+- **Cómo le fue:** la prueba se ejecutó correctamente. El agente respondió con los dos datos esperados y utilizó `requirements-by-procedure.pdf` como sustento. La consulta también se mantuvo dentro de la intención `product_question`.
 
-| Pregunta | Respuesta | Fuente citada | Resultado |
-|---|---|---|---|
-| Si abro una cuenta de ahorros en una agencia, ¿cuándo me entregan la tarjeta física? | La tarjeta física se entrega en el momento. | `account-opening.md` | Correcto en intención, fuentes y hechos; G-Eval: fundamentación 5, relevancia 5 y cita 1. |
+Este caso se presenta por separado y no modifica las métricas de los 30 casos de la corrida principal.
 
-El caso verifica que el agente distinga la apertura en agencia de la apertura por la app y responda
-con el plazo correcto para la tarjeta física.
+## Sesión 6 · Tools del MCP en el chat
 
-# Sesión 6 — Tools del MCP en el chat
+Las pruebas del dominio `support` se realizaron con el mock local (`http://127.0.0.1:8200/mcp`) y con el MCP compartido `bank-mcp`, desplegado en Azure.
 
-**Dominio:** `support`  
-**MCP:** Mock local (`http://127.0.0.1:8200/mcp`) y MCP compartido (`bank-mcp`) en Azure.
+### Tools disponibles en `support`
 
-## Tools de tu dominio
+| MCP | Tools | Parámetros |
+|---|---|---|
+| Mock local | `find_branches` (consulta), `get_request_status` (consulta), `update_contact_details` (acción sensible) | `district`, `service`; `request_id`; `customer_id`, `email`, `phone` |
+| Compartido (`bank-mcp`) | `find_branches` (consulta), `get_request_status` (consulta), `update_contact_details` (acción sensible) | `district`, `service`; `request_id`; `customer_id`, `email`, `phone` |
 
-| MCP | Tools que lista `dev/mcp/mcp_tools.py` |
-|---|---|
-| Mock | Pendiente de registrar la salida de `mcp_tools.py` con el mock local. |
-| Compartido (`bank-mcp`) | 3 tools: `find_branches`, `get_request_status`, `update_contact_details`. |
-
-**Salida obtenida del MCP compartido:**
+El MCP compartido devolvió las tres herramientas para el dominio `support`:
 
 ```text
 https://ca-mcp-server.icybush-2ea2dfc1.eastus2.azurecontainerapps.io/mcp · support · 3 tools
@@ -235,61 +183,48 @@ get_request_status      consulta         request_id
 update_contact_details  acción sensible  customer_id, email, phone
 ```
 
-## Conversación en `dev/chat.py` (paso 12)
+### Pruebas en `dev/chat.py` (paso 12)
 
-| Prueba | Mensaje | Tool pedida (`→`) | Qué pasó | Primer texto / respuesta completa (ms) |
-|---|---|---|---|---|
-| Consulta de tu dominio | ¿Dónde hay una agencia en Miraflores? | `find_branches(district=Miraflores)` | **Ejecutada correctamente.** Encontró la Agencia Miraflores, ubicada en Calle Ficticia 456. Devolvió horario y servicios disponibles. | 18 280 / 18 565 |
-| Acción sensible (requiere aprobación) | Soy CUS-1001, actualiza mi correo a ana.demo@example.com | `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com, phone=None)` | **No se ejecutó.** La tool devolvió `pendiente_aprobacion`. El agente informó que la solicitud requiere aprobación de un asesor y validación mediante un código enviado al correo anterior. | 17 757 / 18 095 |
-| Sin tool que la resuelva | ¿Cuál es el saldo de mi cuenta de ahorros? | Ninguna | **No se invocó ninguna tool.** El agente identificó la consulta como `out_of_scope` y orientó al usuario hacia la aplicación, banca por internet, banca telefónica o una agencia. | 11 318 / 11 618 |
-| Tool de otro dominio | No se realizó una consulta específica a una tool de otro dominio. | No evaluada | Pendiente de realizar una prueba con una herramienta que no pertenezca al dominio `support`. | — |
+| Prueba | Mensaje | Tool solicitada | Resultado | Primer texto / respuesta completa (ms) |
+|---|---|---|---|---:|
+| Consulta de agencia | ¿Dónde hay una agencia en Miraflores? | `find_branches(district=Miraflores)` | La herramienta encontró la Agencia Miraflores, ubicada en Calle Ficticia 456, y devolvió información sobre su horario y los servicios disponibles. | 18 280 / 18 565 |
+| Actualización de datos | Soy CUS-1001, actualiza mi correo a ana.demo@example.com | `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com, phone=None)` | La solicitud quedó en `pendiente_aprobacion`. El agente indicó que el cambio requiere la aprobación de un asesor y una validación mediante un código enviado al correo anterior; por eso, el dato no se modificó durante la conversación. | 17 757 / 18 095 |
+| Consulta sin tool disponible | ¿Cuál es el saldo de mi cuenta de ahorros? | Ninguna | El agente clasificó la consulta como `out_of_scope`. Indicó que no podía consultar el saldo desde ese canal y orientó al usuario a la app, la banca por internet, la banca telefónica o una agencia. | 11 318 / 11 618 |
 
-## Pruebas adicionales
+### Pruebas directas del mock
 
-### 1. Invocación directa de una tool
-
-**Mensaje:**
+**Consulta de agencias**
 
 ```text
 find_branches district=Miraflores
 ```
 
-**Resultado:** la herramienta `find_branches` se ejecutó correctamente y devolvió la Agencia Miraflores.
+La llamada se ejecutó correctamente y devolvió la Agencia Miraflores. El tiempo registrado fue de **21 387 ms** hasta el primer texto y **21 554 ms** para completar la respuesta.
 
-**Tiempo:** 21 387 ms / 21 554 ms.
-
-### 2. Validación de parámetro inválido
-
-**Mensaje:**
+**Validación de un identificador inválido**
 
 ```text
 customer_id = ABC
 ```
 
-**Resultado:** el agente rechazó el identificador porque no cumple el formato `CUS-####`. No se ejecutó la actualización. Explicó que el cambio de correo o teléfono requiere validación y aprobación.
+El agente rechazó el identificador porque no cumple el formato `CUS-####`. La actualización no se ejecutó y se explicó que el cambio de correo o teléfono requiere validación y aprobación. El tiempo fue de **11 223 ms** para el primer texto y **11 829 ms** para la respuesta completa.
 
-**Tiempo:** 11 223 ms / 11 829 ms.
+**Acceso a una tool de otro dominio**
 
-## ¿El modelo inventó algún dato cuando ninguna tool lo resolvía?
+También se comprobó el aislamiento por dominio del mock. `simulate_installment` pertenece a `loans`; al intentar invocarla con `DOMAIN=support` desde `dev/mcp/mcp_tools.py`, el mock respondió:
 
-No se observó que el modelo inventara un saldo bancario ni que proporcionara información financiera sin respaldo de una herramienta.
+```text
+Unknown tool: 'simulate_installment'
+```
 
-Ante la consulta del saldo de la cuenta de ahorros, el agente identificó que no tenía una tool disponible para resolverla (`out_of_scope`) y proporcionó canales alternativos de atención.
+Con esto se confirmó que el mock no expone desde `support` una herramienta registrada para otro dominio.
 
-Esto demuestra un comportamiento adecuado ante consultas que exceden las capacidades del MCP disponible.
+### Respuesta cuando no hay una tool disponible
 
-## Conclusión
+En la consulta sobre el saldo, el agente no inventó un monto ni presentó información financiera sin respaldo. Reconoció que no tenía una herramienta para consultar ese dato y derivó al usuario a los canales correspondientes. El control por dominio también evitó que el mock aceptara `simulate_installment`, que pertenece a `loans`.
 
-Se verificó que el agente puede consumir correctamente las herramientas del MCP compartido `bank-mcp` en Azure, utilizando el dominio `support`.
+### Conclusión
 
-Durante las pruebas se comprobó lo siguiente:
+Las pruebas permitieron comprobar el funcionamiento de las herramientas de `support` tanto en el mock local como en el MCP compartido. `find_branches` respondió con información de la agencia; `update_contact_details` respetó el flujo de aprobación y no modificó los datos sin la validación requerida; y las consultas que no contaban con una herramienta se derivaron a los canales adecuados.
 
-1. **Consulta de información:** `find_branches` ejecuta correctamente las consultas y devuelve información estructurada de las agencias.
-2. **Acciones sensibles:** `update_contact_details` identifica operaciones que requieren aprobación y evita ejecutarlas directamente.
-3. **Consultas fuera de alcance:** el agente reconoce cuando no dispone de una herramienta para responder y orienta al usuario hacia otros canales.
-4. **Validación de parámetros:** se rechazan identificadores que no cumplen el formato esperado, como `ABC` en lugar de `CUS-####`.
-5. **Conexión compartida:** el MCP de Azure expone tres herramientas correspondientes al dominio `support`, manteniendo las operaciones disponibles para el agente.
-
-**Conclusión general:** la integración entre el agente y el MCP compartido funciona correctamente en las pruebas realizadas. El agente puede descubrir y utilizar las tools de su dominio, gestionar acciones sensibles y controlar consultas fuera de alcance sin ejecutar operaciones no autorizadas.
-
-**Pendientes:** registrar las tools del mock local y realizar una prueba específica intentando acceder a una tool de otro dominio.
+Además, la validación de `customer_id = ABC` confirmó el control de formato y la llamada a `simulate_installment` mostró que el mock restringe el acceso a las herramientas del dominio configurado. En conjunto, los resultados muestran que el agente utiliza las tools disponibles y evita ejecutar acciones o consultas que no están habilitadas para `support`.
