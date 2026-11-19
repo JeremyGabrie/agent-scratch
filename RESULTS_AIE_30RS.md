@@ -49,7 +49,7 @@ Dominio: support. MCP: el mock (`http://127.0.0.1:8200/mcp`) y, si ya tienes `MC
 |---|---|---|---|---|
 | Consulta de tu dominio | Soy CUS-1001, ¿dónde hay una agencia en Miraflores? | find_branches(district=Miraflores)| La Agencia Miraflores, Calle Ficticia 456, lunes a viernes 9:00–18:00, caja y plataforma: los datos de la tool | 19133 / 19635 |
 | Acción confirmada | Soy CUS-1001, actualiza mi correo a ana.demo@example.com (y después: "Sí, confirmo el cambio")| update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com, phone=None)| NO SE EJECUTA, pendiente de aprobación. | 22402 / 24629 (confirmación: 22382 / 22661)|
-| Sin tool que la resuelva | ¿Cuál es el saldo de mi cuenta de ahorros? | ninguna | no puede consultar saldos desde aquí y sugirió la app, la banca por internet o la banca por teléfono (01) 555-0200, citando channels-and-hours.html | 9948 / 10239 |
+| Sin tool que la resuelva | ¿Cuál es el saldo de mi cuenta de ahorros? | ninguna | no puede consultar saldos desde aquí y sugirió la app, la banca por internet o la banca por teléfono (01) 555-0200, citando channels-and-hours, el cual esta llamando del corpus de nuestro dominio support.html | 9948 / 10239 |
 | Tool de otro dominio | uv run python dev/mcp/mcp_tools.py simulate_installment amount=20000 term_months=24| simulate_installment| Error de la tool: Unknown tool: 'simulate_installment': para support esa tool no existe, en el mock y en el compartido | — |
 
 ### ¿El modelo inventó algún dato cuando ninguna tool lo resolvía?
