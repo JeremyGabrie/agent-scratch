@@ -1,20 +1,60 @@
 """Puertos: lo que el dominio necesita del mundo exterior. Las implementaciones viven en infrastructure."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Protocol
 
 from agent.domain.evaluation import Verdict
 from agent.domain.knowledge import Chunk, Citation, SearchHit
-from agent.domain.models import Message, ModelEvent, ModelResult, RewriteResult
+from agent.domain.models import (
+    Message,
+    ModelEvent,
+    ModelResult,
+    RewriteResult,
+    RuntimeEvent,
+    ToolCall,
+    ToolDefinition,
+    ToolRequest,
+    ToolResult,
+)
 
 
 class ChatModel(Protocol):
     """Modelo de lenguaje. T1: Foundry directo; T3: Microsoft Agent Framework."""
 
-    def complete(self, messages: list[Message]) -> ModelResult: ...
+    def complete(self, messages: list[Message], tools: list[ToolDefinition]) -> ModelResult | ToolRequest:
+        """La respuesta tipada, o el pedido de tools si el modelo necesita datos antes de responder (S6)."""
+        ...
 
-    def stream(self, messages: list[Message]) -> Iterator[ModelEvent]:
-        """Igual que complete, pero entrega la respuesta mientras se escribe. El último evento es el ModelResult."""
+    def stream(self, messages: list[Message], tools: list[ToolDefinition]) -> Iterator[ModelEvent]:
+        """Igual que complete, pero entrega la respuesta mientras se escribe. El último evento es ModelResult o ToolRequest."""
+        ...
+
+
+class AgentRuntime(Protocol):
+    """Quién conduce el turno: llama al modelo, ejecuta cada tool que pide con run_tool y sigue hasta que responde.
+
+    S6: el ciclo ReAct propio sobre ChatModel. S7: Microsoft Agent Framework. Las reglas no viajan al runtime: qué tools
+    ve el modelo, cuántas vueltas puede dar y qué pasa con una acción sensible las decide ChatService.
+    """
+
+    def run(
+        self,
+        messages: list[Message],
+        tools: list[ToolDefinition],
+        run_tool: Callable[[ToolCall], ToolResult],
+        max_rounds: int,
+    ) -> Iterator[RuntimeEvent]:
+        """Si el modelo pide tools max_rounds veces seguidas sin responder, AgentError INVALID_OUTPUT."""
+        ...
+
+
+class Tools(Protocol):
+    """Las tools del dominio. S6: un servidor MCP, el mock local o el compartido."""
+
+    def definitions(self) -> list[ToolDefinition]: ...
+
+    def call(self, call: ToolCall) -> ToolResult:
+        """Ejecuta la tool. Un error de negocio vuelve como ToolStatus.ERROR: también es información para el modelo."""
         ...
 
 

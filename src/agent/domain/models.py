@@ -5,7 +5,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from agent.domain.knowledge import Citation, SearchHit
 
-Message = dict[str, Any]  # formato OpenAI; T3 suma role "tool" sin cambiar el tipo
+Message = dict[str, Any]  # formato OpenAI; desde S6 también el pedido de tools del modelo y role "tool"
 
 
 class Intent(StrEnum):
@@ -83,12 +83,51 @@ class RewriteResult(BaseModel):
     usage: Usage
 
 
+class ToolDefinition(BaseModel):
+    """Una tool que el agente ofrece al modelo. Es todo lo que el modelo sabe de ella."""
+
+    name: str
+    description: str
+    parameters: dict[str, Any]  # JSON Schema de los argumentos
+    sensitive: bool  # cambia algo en el banco: no se ejecuta sin aprobación humana (S8)
+
+
+class ToolCall(BaseModel):
+    """El modelo pide ejecutar una tool. En streaming, también avisa qué tool se va a usar."""
+
+    id: str
+    name: str
+    arguments: dict[str, Any]
+
+
+class ToolStatus(StrEnum):
+    OK = "ok"
+    ERROR = "error"  # la tool respondió con un error de negocio, o no existe
+    PENDING_APPROVAL = "pending_approval"  # acción sensible: no se ejecutó
+
+
+class ToolResult(BaseModel):
+    """Qué pasó con una tool pedida. content vuelve al modelo como observación."""
+
+    call: ToolCall
+    status: ToolStatus
+    content: str
+
+
+class ToolRequest(BaseModel):
+    """Una llamada al modelo que, en vez de responder, pidió tools."""
+
+    calls: list[ToolCall]
+    usage: Usage
+
+
 class AgentTurn(BaseModel):
-    """Resultado de un turno, con las fuentes que citó. T3 agrega tool_calls y pending_action."""
+    """Resultado de un turno, con las fuentes que citó y las tools que usó. S8 agrega pending_action."""
 
     reply: AgentReply
     usage: Usage
     citations: list[Citation] = []
+    tools: list[ToolResult] = []
     hits: list[SearchHit] = []  # lo que se recuperó: lo usan la evaluación y el juez; no sale en la API
 
 
@@ -104,5 +143,18 @@ class AnswerDelta(BaseModel):
     text: str
 
 
-type ModelEvent = IntentDetected | AnswerDelta | ModelResult  # lo que entrega ChatModel.stream; el último es ModelResult
-type TurnEvent = IntentDetected | AnswerDelta | AgentTurn  # lo que entrega ChatService.handle_stream; el último es AgentTurn
+# lo que entrega ChatModel.stream; el último es ModelResult (respondió) o ToolRequest (pidió tools)
+type ModelEvent = IntentDetected | AnswerDelta | ModelResult | ToolRequest
+class Skill(BaseModel):
+    """Cómo trabaja el agente en su dominio (S7): instrucciones, las tools que puede usar y cuándo debe parar."""
+
+    name: str
+    instructions: str
+    tools: list[str]  # lista blanca: además del dominio que filtra el MCP, la skill decide qué tools ve el modelo
+    max_tool_rounds: int = Field(ge=1)  # criterio de terminación: vueltas de tools sin responder antes de cortar
+
+
+# lo que entrega AgentRuntime.run: los eventos del modelo y de cada tool; el último es ModelResult, con el consumo total
+type RuntimeEvent = IntentDetected | AnswerDelta | ToolCall | ToolResult | ModelResult
+# lo que entrega ChatService.handle_stream: cada tool pedida y su resultado, después la respuesta; el último es AgentTurn
+type TurnEvent = IntentDetected | AnswerDelta | ToolCall | ToolResult | AgentTurn

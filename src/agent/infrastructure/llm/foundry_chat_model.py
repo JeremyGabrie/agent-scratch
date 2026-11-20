@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from collections.abc import Iterator
@@ -18,6 +19,9 @@ from agent.domain.models import (
     ModelResult,
     RewriteResult,
     SearchQuery,
+    ToolCall,
+    ToolDefinition,
+    ToolRequest,
     Usage,
 )
 from agent.infrastructure.llm.credentials import Credential
@@ -45,36 +49,37 @@ class FoundryChatModel:
         )
         self.deployment = deployment
 
-    def complete(self, messages: list[Message]) -> ModelResult:
-        reply, usage = self.parse(messages, AgentReply)
-        return ModelResult(reply=reply, usage=usage)
+    def complete(self, messages: list[Message], tools: list[ToolDefinition]) -> ModelResult | ToolRequest:
+        # ponytail: es stream sin mirar los pedazos; parse no sirve aquí porque exige tools strict y las del MCP no lo son
+        *_, last = self.stream(messages, tools)
+        return last
 
     def rewrite(self, messages: list[Message]) -> RewriteResult:
         search, usage = self.parse(messages, SearchQuery)
         return RewriteResult(query=search.query, usage=usage)
 
-    def stream(self, messages: list[Message]) -> Iterator[ModelEvent]:
+    def stream(self, messages: list[Message], tools: list[ToolDefinition]) -> Iterator[ModelEvent]:
         start = time.perf_counter()
-        intent_sent, answer_sent = False, ""
+        reply_stream = ReplyStream()
         with foundry_errors(), self.client.chat.completions.stream(
             model=self.deployment,
             messages=messages,
             response_format=AgentReply,
             stream_options={"include_usage": True},  # sin esto, el consumo no llega en modo streaming
+            **({"tools": [_as_function(tool) for tool in tools]} if tools else {}),  # la API rechaza una lista vacía
         ) as stream:
             for event in stream:
                 if event.type != "content.delta":
                     continue
-                reply_so_far = partial_reply(event.snapshot)
-                # los campos llegan en el orden del schema: si ya empezó answer, intent está completo
-                if not intent_sent and "answer" in reply_so_far:
-                    yield IntentDetected(intent=reply_so_far["intent"])
-                    intent_sent = True
-                answer_so_far = reply_so_far.get("answer", "")
-                if len(answer_so_far) > len(answer_sent):
-                    yield AnswerDelta(text=answer_so_far[len(answer_sent) :])
-                    answer_sent = answer_so_far
+                yield from reply_stream.events(event.snapshot)
             completion = stream.get_final_completion()
+        if tool_calls := completion.choices[0].message.tool_calls:  # pidió tools en vez de responder
+            calls = [
+                ToolCall(id=call.id, name=call.function.name, arguments=json.loads(call.function.arguments or "{}"))
+                for call in tool_calls
+            ]
+            yield ToolRequest(calls=calls, usage=self._usage(completion, start, "ToolRequest"))
+            return
         reply, usage = self._parsed_and_usage(completion, start, AgentReply)
         yield ModelResult(reply=reply, usage=usage)
 
@@ -93,7 +98,9 @@ class FoundryChatModel:
         message = completion.choices[0].message
         if message.parsed is None:
             raise AgentError(ErrorKind.INVALID_OUTPUT, f"el modelo no devolvió el contrato: {message.refusal or 'vacío'}")
+        return message.parsed, self._usage(completion, start, schema.__name__)
 
+    def _usage(self, completion: ParsedChatCompletion[Any], start: float, label: str) -> Usage:
         tokens = completion.usage
         usage = Usage(
             models=[completion.model or self.deployment],
@@ -102,8 +109,34 @@ class FoundryChatModel:
             prompt_tokens=tokens.prompt_tokens if tokens else 0,
             completion_tokens=tokens.completion_tokens if tokens else 0,
         )
-        log.info("llm %s %s", schema.__name__, usage.model_dump())
-        return message.parsed, usage
+        log.info("llm %s %s", label, usage.model_dump())
+        return usage
+
+
+def _as_function(tool: ToolDefinition) -> dict[str, Any]:
+    """Una tool en el formato de Foundry: nombre, descripción y el JSON Schema de sus parámetros."""
+    return {"type": "function", "function": {"name": tool.name, "description": tool.description, "parameters": tool.parameters}}
+
+
+class ReplyStream:
+    """El AgentReply a medio escribir, convertido en eventos: IntentDetected una vez y cada pedazo nuevo de answer.
+
+    Lo usan FoundryChatModel y AgentFrameworkRuntime: los dos reciben el JSON de AgentReply mientras el modelo lo escribe.
+    """
+
+    def __init__(self) -> None:
+        self.intent_sent, self.answer_sent = False, ""
+
+    def events(self, snapshot: str) -> Iterator[IntentDetected | AnswerDelta]:
+        reply_so_far = partial_reply(snapshot)
+        # los campos llegan en el orden del schema: si ya empezó answer, intent está completo
+        if not self.intent_sent and "answer" in reply_so_far:
+            yield IntentDetected(intent=reply_so_far["intent"])
+            self.intent_sent = True
+        answer_so_far = reply_so_far.get("answer", "")
+        if len(answer_so_far) > len(self.answer_sent):
+            yield AnswerDelta(text=answer_so_far[len(self.answer_sent) :])
+            self.answer_sent = answer_so_far
 
 
 def partial_reply(snapshot: str) -> dict[str, Any]:
