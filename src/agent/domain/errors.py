@@ -6,7 +6,7 @@ class ErrorKind(StrEnum):
     RATE_LIMIT = "rate_limit"
     INVALID_OUTPUT = "invalid_output"
     UPSTREAM = "upstream"
-    NOT_FOUND = "not_found"  # S8: no hay una acción pendiente con ese id en la sesión
+    # T3: TOOL_ERROR, APPROVAL_REJECTED
 
 
 class AgentError(Exception):
