@@ -156,7 +156,5 @@ class Skill(BaseModel):
 
 # lo que entrega AgentRuntime.run: los eventos del modelo y de cada tool; el último es ModelResult, con el consumo total
 type RuntimeEvent = IntentDetected | AnswerDelta | ToolCall | ToolResult | ModelResult
-
-
 # lo que entrega ChatService.handle_stream: cada tool pedida y su resultado, después la respuesta; el último es AgentTurn
 type TurnEvent = IntentDetected | AnswerDelta | ToolCall | ToolResult | AgentTurn
