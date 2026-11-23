@@ -90,23 +90,41 @@ Para ambiar de runtime se configura mediante `AGENT_RUNTIME`; en estas pruebas, 
 
 ## Sesión 8 — Aprobación humana, validación y reintentos
 
-Dominio: `<dominio>` (paso 6).
+Dominio: `support (paso 6).
 
 | Caso | Runtime | Mensaje | Qué pasó | Resultado o ID |
 |---|---|---|---|---|
-| Aprobar | `agent_framework` | _(anotar)_ | _(anotar)_ | _(anotar)_ |
-| Rechazar | `react` | _(anotar)_ | _(anotar)_ | _(anotar)_ |
-| Error de negocio (`CUS-9999`) | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
-| Input inválido | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
+| Aprobar | `agent_framework` | Soy CUS-1001, actualiza mi correo a roxanasoto@example.com. Repondo con: Sí y por ultimo confirmo que realice la actualización de mi correo. Asesor: s | El agente pidió confirmar el cambio y dejó la acción pendiente; no se ejecutó antes de la aprobación. Al responder `s`, solicitó `update_contact_details`; la tool devolvió los datos del cliente y el agente informó que la solicitud quedó registrada para procesamiento, pero que el cambio aún no estaba aplicado. | call-35163948 y call-115af2ef. Cliente CUS-1001; correo roxanasoto@example.com.|
+| Rechazar | `react` | Soy CUS-1001, actualiza mi correo a roxansoto@example.com. Respondo con: Sí y por ultimo no confirmo la actualización de mi correo. Asesor: n.| La llamada a `update_contact_details` quedó pendiente de aprobación. Cuando el asesor respondió `n`, rechazó la solicitud y el agente confirmó que la acción no se ejecutó. | call_OpgjP9xeFaX0klEOg7ulvWo4. Estado: rejected.|
+| Error de negocio (`CUS-9999`) | `agent_framework` y `react` | Soy CUS-9999, ¿qué comisiones me cobraron? | No se pudo validar el manejo de errores de negocio: la consulta de comisiones no corresponde a ninguna tool del dominio `support`. `agent_framework` clasificó la solicitud como `out_of_scope`, mientras que `react` la clasificó como `data_query`.| Sin ID. Prueba pendiente con una tool del dominio `support`. |
+| Input inválido | `agent_framework` | Mi número de cliente es 1001, cambia mi correo a roxanasoto@example.com | El modelo no llamó a la tool: leyó el patrón ^CUS-\d{4}$ y pidió confirmar "¿Su código de cliente es CUS-1001?". La validación se dio con JSON Schema (test_invalid_arguments_never_reach_the_mcp) es la red de seguridad cuando el modelo falla.| `agent_framework`: `call-d39b37d1` (solicitud posterior aprobada). `react`: sin ID |
 
 ### La trayectoria en el log
 
-_(anotar)_ (copia las líneas `trayectoria` de la terminal 1)
+`Agent Framework`
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: sin tools → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: update_contact_details pending_approval → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: decisión del asesor → update_contact_details ok
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: sin tools → respuesta out_of_scope
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: sin tools → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: update_contact_details pending_approval → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria c7f568aa-6294-4a7c-a3f9-1aa3dcdb676b: decisión del asesor → update_contact_details ok
+
+`React`
+INFO agent.application.chat_service: trayectoria 4d86711d-0c3f-46c8-aeea-3cf237fa3aee: sin tools → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria 4d86711d-0c3f-46c8-aeea-3cf237fa3aee: update_contact_details pending_approval → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria 4d86711d-0c3f-46c8-aeea-3cf237fa3aee: decisión del asesor → update_contact_details rejected
+INFO agent.application.chat_service: trayectoria 4d86711d-0c3f-46c8-aeea-3cf237fa3aee: sin tools → respuesta data_query
+INFO agent.application.chat_service: trayectoria 4d86711d-0c3f-46c8-aeea-3cf237fa3aee: sin tools → respuesta sensitive_action
 
 ### ¿Algo se ejecutó sin que lo aprobaras?
 
-_(anotar)_
+No, todo fue con previa aprobacion. En ambos runtimes, `update_contact_details` quedó inicialmente en estado `pending_approval`. En `agent_framework`, la tool se ejecutó después de que el asesor respondió `s` y aprobó la solicitud. En `react`, tras responder `n`, la solicitud pasó a `rejected` y no se ejecutó. Por tanto, no se observó ninguna acción sin aprobación.
 
 ### Conclusión
 
-_(anotar)_
+Las pruebas muestran que el control humano se mantiene en ambos runtimes y que la acción sensible no se envía al MCP antes de la decisión del asesor. En `agent_framework`, las dos solicitudes de actualización de `CUS-1001` quedaron primero en `pending_approval`; tras responder `s`, las trayectorias registraron la decisión como `ok` y la tool devolvió los datos de la solicitud. El agente comunicó que el cambio quedó registrado para procesamiento, sin afirmar que el correo ya estuviera actualizado. En `react`, la trayectoria registró `pending_approval` y luego `rejected` tras responder `n`; la tool no se ejecutó. Esto confirma el flujo esperado en estas ejecuciones, aunque no sustituye pruebas sistemáticas de todos los caminos de aprobación.
+
+La entrada `1001` tampoco ejercitó la validación de un argumento inválido en el servidor: el agente pidió aclarar o corregir el identificador a `CUS-1001` antes de llamar a la tool. Por ello, no se puede concluir a partir de este caso que el rechazo de formato de JSON Schema haya sido probado. La consulta de comisiones para `CUS-9999` no validó un error de negocio del MCP. No había una tool de comisiones disponible en el dominio `support` y no se registró ninguna invocación; además, los runtimes clasificaron la misma solicitud de forma distinta (`out_of_scope` en `agent_framework` y `data_query` en `react`). Para cubrir ese escenario, falta probar un error de negocio mediante una tool de `support` y evaluar por separado la tolerancia a fallos de conexión con las pruebas automatizadas previstas.
+
+La evidencia apunta a que la seguridad del flujo no depende del runtime: ambos conducen las tools mediante el mismo `ChatService`, que filtra las disponibles según la skill, valida los argumentos contra el JSON Schema antes de llamar al MCP y convierte una acción sensible en `pending_approval`. Solo la decisión explícita `approve` llega a ejecutar la tool; `reject` registra el rechazo sin invocarla. Esto coincide con las trayectorias observadas: dos aprobaciones completadas con `agent_framework` y un rechazo en `react`. El runtime cambia cómo se orquesta el ciclo, no la política de negocio ni la compuerta de aprobación.
