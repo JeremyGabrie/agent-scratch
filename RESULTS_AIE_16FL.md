@@ -152,3 +152,58 @@ Sobre la línea base (juez local):
    Eso arregla `support-08`, `-09`, `-29` y `-30`, y sube hechos lejos del borde de 0.75.
 3. **Fuera del dominio (`support-27`):** pedir en el prompt que en preguntas fuera del dominio no cite
    fragmentos.
+
+## Sesión 6 — Tools del MCP en el chat
+
+Dominio: `support`. MCP: el mock (`http://127.0.0.1:8200/mcp`) y el compartido (`bank-mcp`,
+`https://ca-mcp-server.icybush-2ea2dfc1.eastus2.azurecontainerapps.io/mcp`, con `MCP_SCOPE` y token de
+`az login`).
+
+### Tools de tu dominio
+
+| MCP | Tools que lista `dev/mcp/mcp_tools.py` |
+|---|---|
+| Mock | 3 tools: `find_branches` (consulta: district, service), `get_request_status` (consulta: request_id), `update_contact_details` (acción sensible: customer_id, email, phone) |
+| Compartido | Las mismas 3 tools, con los mismos parámetros: `find_branches`, `get_request_status`, `update_contact_details` |
+
+Con el mock y `DOMAIN=loans`, el mismo comando lista 3 tools de `loans`. En el compartido, `get_request_status
+request_id=REQ-6001` devolvió "Reposición de tarjeta", `in_progress`, y `find_branches district=Miraflores`
+devolvió la Agencia Miraflores. La primera llamada al compartido respondió "El servicio del banco no
+responde; intenta de nuevo en unos minutos" y al reintentar funcionó.
+
+### Conversación en `dev/chat.py` (paso 12)
+
+Agente con Foundry (`gpt-5-mini`), Azure AI Search (`idx-team-10`) y el mock MCP.
+
+| Prueba | Mensaje | Tool pedida (`→`) | Qué pasó | Primer texto / respuesta completa (ms) |
+|---|---|---|---|---|
+| Consulta de tu dominio | Soy CUS-1001, ¿dónde hay una agencia en Miraflores? | `find_branches(district=Miraflores)` | Respondió con la Agencia Miraflores, Calle Ficticia 456, lunes a viernes 9:00–18:00, caja y plataforma: los datos de la tool | 19133 / 19635 |
+| Acción confirmada | Soy CUS-1001, actualiza mi correo a ana.demo@example.com (y después: "Sí, confirmo el cambio") | `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com, phone=None)` | **NO SE EJECUTA, pendiente de aprobación.** El agente dijo que lo solicitó y que queda pendiente de revisión por un asesor; no dijo que ya se hizo. Lo pidió en el primer mensaje, porque el cliente ya lo estaba pidiendo, y otra vez al confirmar | 22402 / 24629 (confirmación: 22382 / 22661) |
+| Sin tool que la resuelva | ¿Cuál es el saldo de mi cuenta de ahorros? | ninguna | Respondió que no puede consultar saldos desde aquí y sugirió la app, la banca por internet o la banca por teléfono (01) 555-0200, citando `channels-and-hours.html` | 9948 / 10239 |
+| Tool de otro dominio | `uv run python dev/mcp/mcp_tools.py simulate_installment amount=20000 term_months=24` | `simulate_installment` | `Error de la tool: Unknown tool: 'simulate_installment'`: para `support` esa tool no existe, en el mock y en el compartido | — |
+
+Con el MCP compartido (paso 14), el mismo agente arrancó con `MCP: https://ca-mcp-server…/mcp · 3 tools`:
+
+| Mensaje | Tool pedida (`→`) | Qué pasó | Primer texto / respuesta completa (ms) |
+|---|---|---|---|
+| Soy CUS-1001, ¿en qué estado está mi solicitud REQ-6001? | `get_request_status(request_id=REQ-6001)` | "Su solicitud REQ-6001 está en evaluación. Última actualización: 24/10/2026", con los datos de la tool | 13926 / 14109 |
+| Soy CUS-1001, actualiza mi correo a ana.demo@example.com, confirmo el cambio | `update_contact_details(...)` | NO SE EJECUTA, pendiente de aprobación; el agente lo explicó así | 24381 / 24698 |
+
+### ¿El modelo inventó algún dato cuando ninguna tool lo resolvía?
+
+No. Ante "¿Cuál es el saldo de mi cuenta de ahorros?" no pidió ninguna tool (no hay una de saldos en
+`support`) y no dio un monto: dijo que no puede consultarlo y mandó al cliente a los canales, con datos
+del corpus (`channels-and-hours.html`). Las respuestas con tool usaron solo lo que devolvió la tool
+(dirección y horario de la agencia, estado y fecha de REQ-6001). Un detalle: en esa respuesta clasificó
+la intención como `data_query`, aunque no la pudo resolver.
+
+### Conclusión
+
+El agente ya decide solo qué tool pedir: sacó `CUS-1001` y `REQ-6001` del mensaje, eligió la tool por
+su descripción y mostró cada `→` antes de la respuesta en stream. Las acciones sensibles nunca llegan
+al MCP: quedan pendientes de aprobación y el modelo lo dice sin dar la acción por hecha. Pasar del mock
+al MCP compartido fue solo cambiar `MCP_URL` y `MCP_SCOPE` en el `.env` (la URL lleva `/mcp` al final);
+el agente y las tools no cambiaron. Lo más lento es la primera respuesta: entre 10 y 25 segundos, porque
+cada vuelta con tools es otra llamada a un modelo que razona. A mejorar: el compartido tuvo una falla
+pasajera del banco simulado, y la intención de las preguntas sin tool debería ser `out_of_scope` o
+`product_question`.
