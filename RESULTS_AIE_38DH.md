@@ -310,3 +310,39 @@ Mensaje: "Bloquea mi tarjeta CRD-2001" (el bloqueo es una tool de `cards`). Resp
 ### Conclusión
 
 Cambiar de runtime fue una variable de entorno (`AGENT_RUNTIME`) y el agente se comportó igual con los dos, porque la skill, la memoria de trabajo y la regla de que una acción sensible no se ejecuta viven en nuestro código y no en el framework. La skill frenó el pedido de otro dominio y la memoria de trabajo respondió la dirección sin volver a llamar a la tool. El punto débil es que `gpt-5-mini` a veces da más peso a los fragmentos del corpus que a los datos de las tools guardados en la memoria; para el tema 3 conviene reforzar en el prompt que esos datos también son una fuente válida. Queda `AGENT_RUNTIME=agent_framework` para la sesión 8.
+
+## Sesión 8 — Aprobación humana, validación y reintentos
+
+Dominio: `support` (paso 6). Agente contra Foundry (`gpt-5-mini`), Azure AI Search (`idx-team-10`) y el MCP compartido. Fecha: 2026-11-20.
+
+| Caso | Runtime | Mensaje | Qué pasó | Resultado o ID |
+|---|---|---|---|---|
+| Aprobar | `agent_framework` | Soy CUS-1001, actualiza mi correo a ana.demo@example.com → Sí, confírmalo | El modelo pidió confirmar antes de actuar. Con la confirmación pidió `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com)`, que quedó **NO SE EJECUTA**, pendiente de aprobación (`action_id` `call-76bb01d0`). Recién al responder `s` como asesor se ejecutó y el agente se lo contó al cliente. | `resultado:` el cliente `CUS-1001` con `"email": "ana.demo@example.com"` |
+| Rechazar | `react` | Soy CUS-1001, actualiza mi correo a ana.demo@example.com → Sí, confírmalo | La misma acción quedó pendiente (`call_ZGgYbbRGEY8BQIhjFyK8QhCk`). Al responder `n`: `rechazada por el asesor`, y el agente explicó que la acción no se ejecutó ni se aplicó. | `{"status": "rechazada", "detail": "El asesor rechazó la acción: no se ejecutó."}` |
+| Error de negocio (`CUS-9999`) | `react` | Soy CUS-9999, actualiza mi correo a ana.demo@example.com → Sí, confírmalo | La acción quedó pendiente; al aprobarla, el MCP respondió con error de negocio y no se reintentó. No hubo 502. El modelo no explicó bien el error: dijo que la solicitud "quedó registrada … pero no fue aplicada". Con una consulta, ¿Cuál es el estado de mi solicitud REQ-9999?, el agente sí explicó que la solicitud no existe y pidió verificar el código. | `error: {"error": "El cliente CUS-9999 no existe"}` · `error: {"error": "La solicitud REQ-9999 no existe"}` |
+| Input inválido | `react` | Mi número de cliente es 1001, actualiza mi correo a ana.demo@example.com | El modelo no llamó a la tool: pidió el código en formato `CUS-1001` antes de seguir. La validación contra el JSON Schema queda como red de seguridad y la cubre `test_invalid_arguments_never_reach_the_mcp`. | ninguna tool |
+
+### La trayectoria en el log
+
+```
+INFO agent.application.chat_service: trayectoria d9124e31-b2f2-44dc-8a72-2148220de65a: find_branches error → respuesta data_query
+INFO agent.application.chat_service: trayectoria d9124e31-b2f2-44dc-8a72-2148220de65a: sin tools → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria d9124e31-b2f2-44dc-8a72-2148220de65a: update_contact_details pending_approval → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria d9124e31-b2f2-44dc-8a72-2148220de65a: decisión del asesor → update_contact_details ok
+INFO agent.application.chat_service: trayectoria d728b81d-2103-4203-85d7-d8c89fdb67e9: sin tools → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria d728b81d-2103-4203-85d7-d8c89fdb67e9: update_contact_details pending_approval → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria d728b81d-2103-4203-85d7-d8c89fdb67e9: decisión del asesor → update_contact_details rejected
+INFO agent.application.chat_service: trayectoria e6627232-706e-4a3c-bb47-f90cae79ffc3: update_contact_details pending_approval → respuesta sensitive_action
+INFO agent.application.chat_service: trayectoria e6627232-706e-4a3c-bb47-f90cae79ffc3: decisión del asesor → update_contact_details error
+INFO agent.application.chat_service: trayectoria b3785959-4c42-4f79-a918-d1df9496ff57: get_request_status error → respuesta data_query
+```
+
+La primera línea es el arranque en frío del MCP compartido: `find_branches` respondió "El servicio del banco no responde". Es un error de negocio, así que no se reintentó y el agente se lo dijo al cliente sin caerse.
+
+### ¿Algo se ejecutó sin que lo aprobaras?
+
+No. En las cuatro conversaciones, la acción sensible apareció primero como **NO SE EJECUTA, pendiente de aprobación** y solo tuvo `resultado:` o `error:` después de la decisión del asesor. Al rechazar no se llamó al MCP. En los dos runtimes el modelo además pidió confirmación al cliente antes de pedir la acción.
+
+### Conclusión
+
+La aprobación vive en `_run` y `resolve`, así que funciona igual con `agent_framework` y con `react`: una acción sensible espera al asesor, se ejecuta una sola vez al aprobarla y, al rechazarla, el agente lo cuenta sin volver a pedirla. Ningún error terminó en 502: los errores de negocio llegan al modelo como resultado de la tool. Queda un punto débil en el texto del modelo después de la decisión: con `CUS-9999` dijo que la solicitud "quedó registrada" aunque la tool respondió que el cliente no existe, y al aprobar el cambio de correo dijo que "no se ha aplicado todavía" aunque el resultado ya traía el correo nuevo. `DECISION_HEADER` empuja a hablar de "solicitud registrada" porque así responden las tools de otros dominios; para `support` conviene pedirle al modelo que cuente el error o el dato tal como vino en el resultado.
