@@ -1,0 +1,1 @@
+{"id": "support-AIE30RS", "type": "answerable", "history": [], "question": "¿Qué requisitos por trámite existen?", "expected_intent": "product_question", "expected_sources": ["account-opening.md"], "forbidden_sources": [], "key_facts": ["constancia de no adeudo", "identificación oficial vigente", "comprobante de domicilio", "formato de solicitud"]}
