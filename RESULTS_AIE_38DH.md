@@ -279,3 +279,34 @@ No. En el saldo no dio ningún monto, en el préstamo no inventó una tasa ni un
 ### Conclusión
 
 El agente usa las mismas 3 tools con el mock y con el MCP compartido, sin cambiar código: solo cambian `MCP_URL` y `MCP_SCOPE`, y el token sale de `az login`. Las consultas responden con datos de la tool, las acciones sensibles quedan pendientes de aprobación y, sin tool, el agente lo dice en vez de inventar. Para el tema 3 hay dos ajustes: pedir la confirmación del cliente antes de llamar a la acción sensible y reintentar una vez cuando el MCP compartido no responde.
+
+## Sesión 7 — Skills, memoria de trabajo y Agent Framework
+
+Dominio: `support`. La misma conversación con los dos runtimes (paso 7), contra Foundry (`gpt-5-mini`), Azure AI Search (`idx-team-10`) y el MCP compartido. Fecha: 2026-11-17.
+
+Conversación (una sola sesión por runtime): ¿Dónde hay una agencia en Miraflores? → Soy CUS-1001 y confirmo: actualiza mi correo a ana.demo@example.com → ¿Cuál es el saldo de mi cuenta de ahorros? → ¿Cuál era la dirección de la agencia? → Bloquea mi tarjeta CRD-2001.
+
+| | `react` | `agent_framework` |
+|---|---|---|
+| Tools pedidas en la consulta | `find_branches(district=Miraflores)` | `find_branches(district=Miraflores)` |
+| La acción sensible quedó **NO SE EJECUTA** | Sí: `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com, phone=None)`, pendiente de aprobación | Sí: la misma llamada, pendiente de aprobación |
+| Pregunta de memoria respondida sin `→` | Sí en la corrida válida: "La dirección de la Agencia Miraflores es Calle Ficticia 456". En otra corrida el modelo no usó la memoria (ver abajo) | Sí: "La Agencia Miraflores (BRN-02) está en Calle Ficticia 456" |
+| Primer texto (ms) | 30982 | 34876 |
+| Respuesta completa (ms) | 31124 | 35037 |
+| Tokens (entrada / salida) | 2680 / 489 (la conversación completa: 12876 / 5855) | 2680 / 493 (la conversación completa: 13096 / 6007) |
+
+Los tiempos y tokens de la tabla son los de la consulta (primer mensaje). El saldo, sin tool que lo resuelva, se derivó a la app, la banca por internet o el teléfono con los dos runtimes, sin inventar un monto.
+
+### ¿La skill frenó la tool de otro dominio?
+
+Mensaje: "Bloquea mi tarjeta CRD-2001" (el bloqueo es una tool de `cards`). Respuesta: con los dos runtimes el agente no pidió ninguna tool y dijo que no puede bloquear tarjetas desde este canal; derivó al bloqueo en la app (24 horas) o al (01) 555-0200. El modelo no tiene esa tool: el MCP compartido filtra por dominio y la skill de `support` solo deja pasar `find_branches`, `get_request_status` y `update_contact_details`.
+
+### Diferencias entre los dos runtimes
+
+- Ninguna en el comportamiento: las mismas tools con los mismos argumentos, la acción sensible pendiente de aprobación, la memoria de trabajo y el rechazo del otro dominio. Los tokens de entrada son casi iguales porque los mensajes los arma `ChatService` en los dos casos; el runtime solo conduce las vueltas de tools.
+- Tiempos parecidos: la consulta tardó 31 s con `react` y 35 s con `agent_framework`; los demás turnos, de 12 a 34 s. La diferencia está dentro de la variación de `gpt-5-mini`, que razona antes de responder.
+- Memoria con `react`: hice tres corridas. En la primera el MCP compartido estaba frío (`find_branches` respondió "El servicio del banco no responde"), así que no había dirección en la memoria y en la pregunta de memoria el agente volvió a llamar a `find_branches`. En la segunda la dirección sí estaba en la memoria de trabajo (el resultado de la tool se guarda recortado a 600 caracteres y la sesión tenía 8 mensajes, menos que el límite de 20), pero el modelo respondió que "los fragmentos proporcionados no contienen la dirección". En la tercera respondió bien sin tool. Es variabilidad del modelo, no del runtime: el harness entrega los mismos datos a los dos.
+
+### Conclusión
+
+Cambiar de runtime fue una variable de entorno (`AGENT_RUNTIME`) y el agente se comportó igual con los dos, porque la skill, la memoria de trabajo y la regla de que una acción sensible no se ejecuta viven en nuestro código y no en el framework. La skill frenó el pedido de otro dominio y la memoria de trabajo respondió la dirección sin volver a llamar a la tool. El punto débil es que `gpt-5-mini` a veces da más peso a los fragmentos del corpus que a los datos de las tools guardados en la memoria; para el tema 3 conviene reforzar en el prompt que esos datos también son una fuente válida. Queda `AGENT_RUNTIME=agent_framework` para la sesión 8.
