@@ -333,7 +333,7 @@ Equipo: `team-10`. Dominio: `support`.
 | Comprobación | Resultado |
 |---|---|
 | Tests en el contenedor (paso 3) | `docker run --rm agent:test` → **139 passed, 5 skipped** (6.1 s). Los 5 skipped son los golden sets: `evals/` no entra en la imagen. Fuera del contenedor, `uv run pytest` dio también 139 passed, 5 skipped (antes de la sesión: 132 passed, 5 skipped); los 7 nuevos son los de `test_cosmos_store.py`. |
-| Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | _Pendiente._ Necesita mi `az login` con el rol de datos sobre `team-10`. El comportamiento está cubierto por `test_history_survives_a_new_store_on_the_same_container`: otra instancia del store, sobre el mismo contenedor, lee el historial y la acción pendiente. |
+| Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | **Sí.** En mi laptop, con `az login` y `COSMOS_CONTAINER=team-10`, el arranque dijo `Conversation store: Cosmos DB workshop/team-10`. `update_contact_details(customer_id=CUS-1001, email=ana.demo2@example.com)` quedó **NO SE EJECUTA, pendiente de aprobación** (`call-9004c846`) en el proceso `[14500]`. Lo detuve, levanté otro (`[18020]`) y recién ahí aprobé: `POST /chat/actions` → **200 con `resultado:`**, el cliente `CUS-1001` con el correo nuevo. La trayectoria `9609f860…` es la misma antes y después del reinicio: el historial y la acción vinieron de Cosmos DB. Hasta la sesión 8 esa decisión daba 404. |
 | Imagen desplegada (`team-10/agent:<sha>`) | _Pendiente del merge a `main`._ `main` sigue en `1099c27` (5 de noviembre) y en GitHub Actions todas las corridas de `deploy-agent` son de pull request: el job `deploy` todavía no corrió. |
 | Revisión activa y duración del job `deploy` | _Pendiente del merge a `main`._ |
 | `/health` del agente desplegado | _Pendiente del despliegue._ |
@@ -357,6 +357,17 @@ Ninguna es una api key ni una contraseña: son endpoints, nombres de recursos y 
 
 ### Problemas que encontraste y cómo los resolviste
 
+- **El MCP compartido en frío.** En el primer intento (`call-904d5ee8`) aprobé sin reiniciar y la tool respondió
+  `El servicio del banco no responde`. Es un error de negocio y la acción aprobada no se reintenta. Repetí con el MCP ya despierto,
+  ahora reiniciando `uvicorn` entre el pedido y la aprobación, y salió `resultado:`.
+- **El modelo cuenta más de lo que pasó.** Con ese error dijo que la solicitud "quedó registrada para que el banco la procese", y
+  antes de llamar a la tool, cuando solo pedía confirmación, dijo "He registrado la solicitud". Es el mismo punto débil de
+  `DECISION_HEADER` que anoté en la sesión 8.
+- **`az login` en la laptop.** `az login` fallaba con `ConnectionResetError(10054)` al listar los tenants desde la red corporativa;
+  con `az login --tenant <id del tenant de la ficha>` entró directo a la suscripción del workshop.
+- **`.env` en otra copia del repo.** El clon de esta sesión no tenía `.env` (`Falta FOUNDRY_ENDPOINT`); copié el de la sesión 6
+  y pasé `COSMOS_ENDPOINT`, `COSMOS_DATABASE` y `COSMOS_CONTAINER` como variables de entorno al levantar `uvicorn`.
+
 - **Sin acceso a `upstream`.** Tomé `.github/workflows/deploy-agent.yaml` y `devops/` de la rama del capitán (`s9_AIE_20JG`) y
   comprobé que son idénticos a los que trajo `s9_AIE_38DH`: es la copia del template, sin ediciones. `git status --short` mostró
   lo esperado: `M deploy-agent.yaml`, `A devops/DESPLIEGUE.md`, `M devops/Dockerfile`.
@@ -373,5 +384,7 @@ Ninguna es una api key ni una contraseña: son endpoints, nombres de recursos y 
 El historial y la acción pendiente pasan a Cosmos DB con otra implementación del puerto `ConversationStore`, sin tocar
 `ChatService`; los tests de la API siguen en memoria y nunca tocan Cosmos. La imagen de producción no trae `.env` ni `data/`: la
 imagen fija lo que no cambia entre entornos, Azure pone los endpoints y la identidad administrada, y sin AI Search la imagen se
-detiene en vez de arrancar a medias. Por indicación del profesor, este PR solo trae `RESULTS_AIE_16FL.md`. Falta el despliegue
-real: cuando el capitán haga el merge a `main`, completo la imagen, la revisión y las pruebas contra Azure.
+detiene en vez de arrancar a medias. En mi laptop ya se vio: una
+acción pendiente sobrevivió al reinicio de `uvicorn` y se aprobó en otro proceso. Por indicación del profesor, este PR solo trae
+`RESULTS_AIE_16FL.md`. Falta el despliegue real: cuando el capitán haga el merge a `main`, completo la imagen, la revisión y las
+pruebas contra Azure.
