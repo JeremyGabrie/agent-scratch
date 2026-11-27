@@ -396,3 +396,79 @@ acción pendiente sobrevivió al reinicio de `uvicorn` y se aprobó en otro proc
 y aprobó la acción de `support` usando solo la identidad administrada para AI Search y el MCP, sin ninguna api key. Cada merge a
 `main` despliega: el pipeline prueba, publica `team-10/agent:<sha>` y cambia solo la imagen de la Container App. Por indicación del
 profesor, este PR solo trae `RESULTS_AIE_16FL.md`.
+
+## Sesión 10 — Trazas por turno y dashboard
+
+Equipo: `team-10`. App Insights: `appi-team-10`. Los cuatro casos contra el agente desplegado (paso 8).
+
+| Caso | `operation_Id` | Latencia (ms) | Tokens de entrada | Tokens de salida | Tools | Error | Observaciones |
+|---|---|---|---|---|---|---|---|
+| Saludo | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | Sin agente desplegado: ver abajo. |
+| Consulta con retrieval | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | Sin agente desplegado. |
+| Llamada a tool | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | Sin agente desplegado. |
+| Error controlado | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | _Pendiente_ | Sin agente desplegado. |
+
+**Por qué está pendiente.** El paso 8 se hace contra el agente en Azure con el código de esta sesión, y ese código todavía no
+está desplegado: `main` está en `0502ef3`, el despliegue de la sesión 9 (`team-10/agent:0502ef3…`), que no manda trazas. El
+código de trazas está en la rama del capitán (`s10_AIE_20JG`), que aún no pasó a `equipo-10` ni a `main` (pasos 5 y 7). Cuando
+el capitán despliegue, completo los cuatro casos con la consulta del paso 4.
+
+**Trazas del agente en mi laptop (paso 4).** Levanté el agente con el código de esta sesión, Cosmos DB, el MCP compartido y la
+cadena de conexión de `appi-team-10` en mi `.env`, y conversé un saludo y una consulta de datos. Las trazas llegaron a App
+Insights. Son del agente en mi laptop, no del desplegado, así que no reemplazan los cuatro casos de arriba:
+
+| Turno | `operation_Id` | Latencia (ms) | Tokens | Tools | Error |
+|---|---|---|---|---|---|
+| Saludo (`greeting`) | `d93ed00e1a54addeedac8aed22bdc493` | 9 858 | 1 367 | — | — |
+| Consulta de datos (`data_query`) | _(no lo anoté)_ | 25 183 | 3 836 (los dos turnos suman 4 180 de entrada y 1 023 de salida; el saludo usó 1 367) | consulta al MCP | — |
+
+`appi-team-10` lo comparten todos los del equipo: en las últimas 24 horas también aparecen turnos de la tarde (entre ellos un
+`chat.turn` fallido con `agent.error=APIConnectionError`) que no son de esta prueba, así que no los cuento como míos.
+
+**Lo que sí se verificó del código de la sesión 10:**
+
+- `tests/application/test_tracing.py`: primero **5 failed** (rojo de TDD) y después **5 passed**: un `chat.turn` por turno con
+  intención, tokens, llamadas al modelo, latencia y tools; cada tool como span hijo de su turno; el turno fallido como span
+  en rojo con `agent.error=upstream`; la decisión del asesor como `chat.decision` con la tool aprobada dentro; y una decisión
+  sin acción pendiente con `agent.error=not_found` y la excepción registrada una sola vez.
+- `tests/infrastructure/test_telemetry.py`: primero **2 failed** y después **2 passed**: sin cadena de conexión no hay
+  telemetría; con ella, `configure_azure_monitor` recibe la cadena, una credencial de Entra ID y `logger_name="agent"`.
+- Suite completa: `uv run pytest` → **146 passed, 5 skipped**, y lo mismo dentro del contenedor (`docker run --rm agent:test`).
+  Son los 151 de la guía; los 5 skipped son los golden sets, que piden el `evals.zip` de la plataforma.
+- `contextvars.copy_context()` en `mcp_tools.py`: con un MCP en memoria comprobé que la tool ve el mismo `trace_id` que el
+  `chat.turn` que la llamó. Sin ese cambio, la llamada queda fuera de la traza del turno (`trace_id` distinto).
+
+### Lo que dice el workbook
+
+Workbook **Turnos del agente** importado en `appi-team-10` (periodo: últimas 4 horas, los dos turnos de mi laptop). Falta
+verlo con el agente desplegado.
+
+| Panel | Lo que viste |
+|---|---|
+| Latencia p95 por intención | `data_query`: 25 183 ms (1 turno). `greeting`: 9 858 ms (1 turno). Con un turno por intención, p50 = p95. |
+| Tokens por turno | 2 turnos: 4 180 de entrada y 1 023 de salida, **2 602 por turno** y **2 llamadas al modelo por turno**. |
+| Dónde se va el tiempo de un turno | Foundry chat: 4 llamadas, 11 312 ms (p95 3 854). **MCP: 2 llamadas, 10 597 ms (p95 10 146)**. Cosmos DB: **17 llamadas**, 2 432 ms (p95 173). Foundry embeddings: 2, 1 400 ms. AI Search: 2, 1 207 ms. Otro: 6, 77 ms. |
+| Tools con error | _No revisé ese panel._ En los dos turnos no hubo errores (`errores = 0` en **Turnos y errores**). |
+
+### ¿Qué optimizarías primero y por qué?
+
+1. **El MCP en frío.** Una sola llamada al MCP tardó unos 10 s (p95 10 146 ms en 2 llamadas): casi la mitad del turno de
+   `data_query` (25 s) esperando al banco. Es el mismo "banco en frío" que en la sesión 9 hizo fallar una aprobación; ahora la
+   traza lo mide. Lo primero sería mantenerlo caliente (una réplica mínima o un ping periódico), y eso lo decide plataforma,
+   porque el MCP es compartido.
+2. **Foundry.** Es el mayor tiempo total (11.3 s en 4 llamadas) y es lo que se paga: 2 llamadas al modelo por turno y unos
+   2 600 tokens por turno. En la sesión 9 la reescritura de la pregunta de seguimiento tardó 8.1 s para una sola frase; un
+   modelo más chico para esa tarea bajaría la latencia y el costo.
+3. **Cosmos DB por volumen, no por tiempo.** 17 llamadas para 2 turnos (unas 8 por turno), aunque solo sumaron 2.4 s: cada
+   `append` y `set_pending` lee y reescribe el documento entero de la sesión. Si las sesiones crecen, conviene `patch_item` o
+   juntar las escrituras del turno en una sola.
+
+### Conclusión
+
+Cada turno ya deja su expediente: `chat.turn` con intención, tokens, latencia, tools y acción pendiente; `chat.decision` con la
+decisión del asesor; y un span por tool, hijo de su turno aunque Agent Framework la llame desde otro hilo. Nada de eso lleva el
+texto de la conversación ni los argumentos de las tools, solo medidas e identificadores. La API de OpenTelemetry no sabe de
+Azure: sin cadena de conexión los spans no hacen nada, así que los tests no cambiaron, y con ella el distro de Azure Monitor
+envía con Entra ID, sin la llave de la cadena. Por indicación del profesor, este PR solo trae `RESULTS_AIE_16FL.md`; el código
+quedó en la rama `backup/s10_AIE_16FL-codigo`. Falta ver las trazas reales: cuando el capitán despliegue, completo los cuatro
+casos y el workbook.
