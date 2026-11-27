@@ -141,7 +141,7 @@ Equipo: `equipo-10`. Dominio: `support`.
 | Revisión activa y duración del job `deploy` | ca-agent-chat-10--0000002, estado RunningAtMaxScale. Job deploy en 1 min 56 s. |
 | `/health` del agente desplegado | Agente desplegado: ok, con autenticación de Entra ID. |
 | Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | "¿Qué necesito para abrir una cuenta de ahorros?" → product_question con 3 referencias recuperadas de account-opening.md.|
-| Acción aprobada contra Azure, con su `resultado:` | update_contact_details(customer_id=CUS-1001, email=roxanasoto@example.com) quede en penediente de aprobacion de agente, respondi s y apareció resultado: con el correo nuevo con status 200|
+| Acción aprobada contra Azure, con su `resultado:` | update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com) quede en penediente de aprobacion de agente, respondi s y apareció resultado: con el correo nuevo con status 200|
 
 ### Qué pone Azure y qué pone la imagen
 
