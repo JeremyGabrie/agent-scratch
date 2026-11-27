@@ -328,3 +328,45 @@ Se comprobó el control humano con los dos runtimes. `agent_framework` permitió
 También se comprobó que, ante el código de cliente escrito como `1001`, el agente solicitó aclararlo al formato `CUS-1001` antes de continuar. Esta interacción no demuestra por sí sola la validación de un argumento inválido directamente contra JSON Schema, porque el modelo corrigió/pidió aclarar el dato antes de llamar a la tool.
 
 La prueba con `CUS-9999` no llegó a comprobar un error de negocio del MCP: se consultaron comisiones, una operación fuera del dominio `support`, y no se invocó ninguna tool. Queda pendiente repetir ese caso con una operación del dominio `support`, además de comprobar la tolerancia a fallos de conexión mediante los tests automatizados del paso 3.
+
+## Sesión 9 — Despliegue en Azure
+
+Equipo: `team-10`. Dominio: `support`.
+
+| Comprobación | Resultado |
+|---|---|
+| Tests en el contenedor (paso 3) | 139 passed, 5 skipped en 8.17 s |
+| Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | La acción pendiente sobrevivió al reinicio. El primer intento contra MCP falló porque el servicio bancario estaba frío. En una nueva solicitud, la aprobación fue procesada; el servicio informó que quedaba registrada para procesamiento, sin confirmar la aplicación final del cambio. |
+| Imagen desplegada (`team-10/agent:<sha>`) | `team-10/agent:0502ef3b36d2b076f33345b1ccf7a66ff340f3c0` |
+| Revisión activa y duración del job `deploy` | `ca-agent-chat-10--0000002`, estado `RunningAtMaxScale`. Job `deploy` exitoso, aproximadamente 1 min 56 s. |
+| `/health` del agente desplegado | `ok`, con autenticación de Entra ID. |
+| Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | 3 referencias recuperadas. Primer texto: 8544 ms; respuesta completa: 8770 ms. |
+| Acción aprobada contra Azure, con su `resultado:` | `update_contact_details` quedó pendiente de aprobación. Tras la aprobación del asesor, MCP devolvió `resultado` y el agente confirmó la actualización. Se omiten datos personales del cliente. |
+
+### Qué pone Azure y qué pone la imagen
+
+**Variables configuradas por Azure (solo nombres):**
+
+`APPLICATIONINSIGHTS_CONNECTION_STRING`, `AZURE_CLIENT_ID`, `AZURE_OPENAI_ENDPOINT`, `COSMOS_CONTAINER`, `COSMOS_DATABASE`, `COSMOS_ENDPOINT`, `FOUNDRY_PROJECT_ENDPOINT`, `KEY_VAULT_URI`, `MCP_SCOPE`, `MCP_URL`, `SEARCH_ENDPOINT`, `SEARCH_INDEX`, `TEAM_ID`.
+
+**Variables y configuración de la imagen:**
+
+`DOMAIN=support`, `FOUNDRY_AUTH_PROVIDER=entra_id`, `KNOWLEDGE_BASE=azure_search`, `AGENT_RUNTIME=agent_framework`. Puerto de aplicación: `8000`. La imagen utiliza `AZURE_OPENAI_ENDPOINT` como alternativa para `FOUNDRY_ENDPOINT`.
+
+### Problemas que encontraste y cómo los resolviste
+
+- La versión inicial de `dev/chat.py` no incorporaba autenticación para Azure. Se actualizó desde la referencia `t4-s9` para utilizar `AGENT_SCOPE`, `DefaultAzureCredential` y validar `/health`.
+- La primera petición desde el cliente sin autenticación produjo un error HTTP cuyo cuerpo vacío provocó `JSONDecodeError`. Se corrigió al utilizar la versión del cliente con token Bearer y manejo de errores.
+- Durante la prueba de persistencia con Cosmos DB, el primer intento contra MCP después del reinicio falló porque el servicio bancario estaba frío. Se repitió la solicitud y se obtuvo respuesta del MCP.
+- La consulta sobre seguimiento de solicitudes recuperó estados y plazos, pero las fuentes disponibles no especificaron el procedimiento exacto ni los datos requeridos para consultar el estado.
+- La reconciliación entre `main` y `equipo-10` presentó conflictos de código y pruebas. Se conservaron las implementaciones consolidadas del equipo y se verificaron nuevamente las 144 pruebas.
+
+### Conclusión
+
+Se completó el despliegue del agente `support` en Azure mediante GitHub Actions. Los jobs `test` y `deploy` finalizaron correctamente; la imagen se publicó en ACR y la revisión `ca-agent-chat-10--0000002` alcanzó el estado `RunningAtMaxScale`.
+
+Se verificó el acceso autenticado mediante Entra ID, el endpoint `/health`, la recuperación de fuentes desde Azure AI Search y el flujo de aprobación humana de una acción sensible mediante el MCP compartido.
+
+También se comprobó la persistencia del estado pendiente en Cosmos DB después de reiniciar `uvicorn`. La primera operación posterior encontró el servicio bancario frío, por lo que se documentó esa incidencia sin asumir que la solicitud había sido aplicada.
+
+Las 144 pruebas locales y las validaciones del pipeline quedaron aprobadas. El trabajo de código se integró en `main`; queda pendiente el PR de resultados de esta sesión.
