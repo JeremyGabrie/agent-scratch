@@ -135,22 +135,31 @@ Equipo: `equipo-10`. Dominio: `support`.
 
 | Comprobación | Resultado |
 |---|---|
-| Tests en el contenedor (paso 3) | _(anotar)_ |
-| Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | _(anotar)_ |
-| Imagen desplegada (`team-NN/agent:<sha>`) | _(anotar)_ |
-| Revisión activa y duración del job `deploy` | _(anotar)_ |
-| `/health` del agente desplegado | _(anotar)_ |
-| Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | _(anotar)_ |
-| Acción aprobada contra Azure, con su `resultado:` | _(anotar)_ |
+| Tests en el contenedor (paso 3) | docker run --rm agent:test → 139 passed, 5 skipped (5.4 s). Los 5 skipped son los golden sets: evals/ no entra en la imagen. En la laptop, uv run pytest → 144 passed. |
+| Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | Sí. update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com) quedó pendiente (call-cd69cc26). Detuve y levanté uvicorn, aprobé, y respondió 200 con resultado:: el cliente CUS-1001 con el correo nuevo. Hasta la sesión 8 esa decisión daba 404. El arranque dijo Conversation store: Cosmos DB workshop/team-10, y la consulta al contenedor mostró 2 sesiones de 7 mensajes cada una, con pending: None. |
+| Imagen desplegada (`team-NN/agent:<sha>`) | team-10/agent:0502ef3b36d2b076f33345b1ccf7a66ff340f3c0 el merge main <- equipo-10|
+| Revisión activa y duración del job `deploy` | ca-agent-chat-10--0000002, estado RunningAtMaxScale. Job deploy en 1 min 56 s. |
+| `/health` del agente desplegado | Agente desplegado: ok, con autenticación de Entra ID. |
+| Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | "¿Qué necesito para abrir una cuenta de ahorros?" → product_question con 3 referencias recuperadas de account-opening.md.|
+| Acción aprobada contra Azure, con su `resultado:` | update_contact_details(customer_id=CUS-1001, email=roxanasoto@example.com) quede en penediente de aprobacion de agente, respondi s y apareció resultado: con el correo nuevo con status 200|
 
 ### Qué pone Azure y qué pone la imagen
 
-_(anotar)_ (solo nombres de variables, nunca valores)
+Para variables configuradas por Azure: AZURE_OPENAI_ENDPOINT, FOUNDRY_PROJECT_ENDPOINT, AZURE_CLIENT_ID, TEAM_ID, APPLICATIONINSIGHTS_CONNECTION_STRING, SEARCH_ENDPOINT, SEARCH_INDEX, MCP_URL, MCP_SCOPE, KEY_VAULT_URI,COSMOS_ENDPOINT, COSMOS_DATABASE, COSMOS_CONTAINER.
+Para variables de la imagen: DOMAIN, FOUNDRY_AUTH_PROVIDER=entra_id, KNOWLEDGE_BASE=azure_search, AGENT_RUNTIME=agent_framework, AZURE_OPENAI_ENDPOINT.
 
 ### Problemas que encontraste y cómo los resolviste
 
-_(anotar)_
-
+- **Reinicio y disponibilidad del MCP:** la acción pendiente sobrevivió al reinicio de `uvicorn` en Cosmos DB. Sin embargo, la primera ejecución aprobada encontró el MCP bancario aún frío. No hubo reintento automático de esa acción aprobada; al repetir la prueba con el MCP disponible, se obtuvo respuesta.
+- **Configuración de Cosmos DB:** se probaron `COSMOS_ENDPOINT`, `COSMOS_DATABASE` y `COSMOS_CONTAINER` como variables de entorno al iniciar `uvicorn`, sin modificar `.env`. `pydantic-settings` toma esos valores del entorno antes que los del archivo.
+- **Integración y pruebas:** la reconciliación entre `main` y `equipo-10` tuvo conflictos en código y pruebas. Se conservaron las implementaciones consolidadas del equipo y se volvieron a ejecutar satisfactoriamente las 144 pruebas.
+- **Inicio de sesión de Azure desde la laptop:** `az login` fallaba con `ConnectionResetError(10054)` al listar los tenants desde la red corporativa. Al indicar explícitamente el tenant de la ficha con `az login --tenant <tenant-id>`, no reconocia y se voli a hacer el intento de ingreso nuevamente indicando la opcion 1 del tennt.
 ### Conclusión
 
-_(anotar)_
+El laboratorio completó el recorrido desde el código del equipo hasta una conversación con el agente desplegado. Los cambios se integran mediante PR; al llegar a `main`, GitHub Actions ejecuta `test` y `deploy`. El pipeline obtiene credenciales de Azure mediante OIDC, publica una imagen `team-10/agent:<sha>` en ACR y actualiza la Container App `ca-agent-chat-10`. No se guardan credenciales permanentes de Azure en GitHub: la confianza está acotada por la credencial federada del repositorio y la rama autorizada.
+
+La imagen multi-stage separa la validación del artefacto de producción: el stage `test` ejecuta las pruebas; el stage `runtime` empaqueta la aplicación y sus dependencias, sin `.env`, `data/`, tests ni herramientas de desarrollo. La imagen conserva solo configuración común entre entornos; los endpoints y valores específicos los inyecta Azure. El contenedor corre sin privilegios en el puerto 8000. 
+
+La identidad de ejecución, la configuración y el estado son responsabilidades distintas: la identidad administrada autentica al agente ante Foundry, AI Search, Cosmos DB y el MCP; la configuración de la Container App determina endpoints y recursos; Cosmos DB conserva el historial y las acciones pendientes fuera del contenedor. `CosmosConversationStore` implementa el puerto `ConversationStore`, por lo que `ChatService` no quedó acoplado a Cosmos y las pruebas de API pudieron seguir usando almacenamiento en memoria. Se comprobó que la decisión pendiente sobrevivió al reinicio de `uvicorn`. 
+
+La prueba del MCP muestra por qué persistir una acción y ejecutarla son garantías diferentes. La primera operación aprobada encontró frío el servicio bancario, así que no se consideró aplicada. Al repetir la prueba con el MCP disponible, se recibió una respuesta. Para robustecer este límite entre sistemas, el siguiente paso es definir idempotencia y estados de resultado recuperables antes de introducir reintentos automáticos; de lo contrario, un timeout después de que el MCP haya aplicado un cambio podría causar una operación duplicada.
