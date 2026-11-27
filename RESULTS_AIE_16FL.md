@@ -156,7 +156,7 @@ Sobre la línea base (juez local):
 ## Sesión 6 — Tools del MCP en el chat
 
 Dominio: `support`. MCP: el mock (`http://127.0.0.1:8200/mcp`) y el compartido (`bank-mcp`,
-`https://ca-mcp-server.icybush-2ea2dfc1.eastus2.azurecontainerapps.io/mcp`, con `MCP_SCOPE` y token de
+`https://ca-mcp-server…/mcp`, con `MCP_SCOPE` y token de
 `az login`).
 
 ### Tools de tu dominio
@@ -325,3 +325,74 @@ terminaron en una respuesta al cliente, no en un `502`. La trayectoria deja ver 
 pasó. A tener en cuenta: el MCP compartido es de todos los equipos, así que aprobar el cambio de correo sí
 lo cambió en el banco simulado para `CUS-1001`; y todo lo pendiente vive en memoria hasta la sesión 9.
 `AGENT_RUNTIME=agent_framework` sigue en el `.env`.
+
+## Sesión 9 — Despliegue en Azure
+
+Equipo: `team-10`. Dominio: `support`.
+
+| Comprobación | Resultado |
+|---|---|
+| Tests en el contenedor (paso 3) | `docker run --rm agent:test` → **139 passed, 5 skipped** (6.1 s). Los 5 skipped son los golden sets: `evals/` no entra en la imagen. Fuera del contenedor, `uv run pytest` dio también 139 passed, 5 skipped (antes de la sesión: 132 passed, 5 skipped); los 7 nuevos son los de `test_cosmos_store.py`. |
+| Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | **Sí.** En mi laptop, con `az login` y `COSMOS_CONTAINER=team-10`, el arranque dijo `Conversation store: Cosmos DB workshop/team-10`. `update_contact_details(customer_id=CUS-1001, email=ana.demo2@example.com)` quedó **NO SE EJECUTA, pendiente de aprobación** (`call-9004c846`) en el proceso `[14500]`. Lo detuve, levanté otro (`[18020]`) y recién ahí aprobé: `POST /chat/actions` → **200 con `resultado:`**, el cliente `CUS-1001` con el correo nuevo. La trayectoria `9609f860…` es la misma antes y después del reinicio: el historial y la acción vinieron de Cosmos DB. Hasta la sesión 8 esa decisión daba 404. |
+| Imagen desplegada (`team-10/agent:<sha>`) | `team-10/agent:0502ef3b36d2b076f33345b1ccf7a66ff340f3c0`, el commit del merge `main <- equipo-10` (27 de noviembre). |
+| Revisión activa y duración del job `deploy` | `ca-agent-chat-10--0000002` → `RunningAtMaxScale`. El job `deploy` duró **~2 min** (16:36:58 → 16:38:56 UTC) y el job `test` del mismo merge quedó en verde. |
+| `/health` del agente desplegado | `Agente en https://ca-agent-chat-10…azurecontainerapps.io: ok`, con el token de mi `az login` (`AGENT_SCOPE`). El primer intento se cortó por timeout a los 30 s: la app estaba en cero réplicas y el arranque en frío tardó más; el segundo respondió `ok`. |
+| Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | **Sí.** "¿Qué necesito para abrir una cuenta de ahorros?" → `[product_question]` con `Fuentes:` `account-opening.md` (Requisitos, Por la aplicación, En agencia). Primer texto en **5074 ms**, respuesta completa en **5232 ms**. |
+| Acción aprobada contra Azure, con su `resultado:` | **Sí.** `update_contact_details(customer_id=CUS-1001, email=ana.demo3@example.com)` quedó **NO SE EJECUTA, pendiente de aprobación** (`call-b120408b`); al aprobar salió **`resultado:`** con el cliente `CUS-1001` y el correo nuevo. El primer intento (`call-b35c6543`) dio `El servicio del banco no responde`: el MCP en frío. |
+
+La imagen de producción (paso 4, `--build-arg DOMAIN=support`) arrancó con `Foundry auth provider: entra_id` y se detuvo con
+`RuntimeError: KNOWLEDGE_BASE=azure_search requiere SEARCH_ENDPOINT y SEARCH_INDEX en .env.` (código de salida 1): el fail-fast
+esperado sin Azure. Dentro de `/app` solo está `.venv` (sin `tests/`, `dev/` ni `data/`) y corre como el usuario `app`, sin privilegios.
+
+### Qué pone Azure y qué pone la imagen
+
+- **La imagen** (`ENV` del stage `runtime`, revisado con `docker image inspect`): `DOMAIN`, `FOUNDRY_AUTH_PROVIDER`, `KNOWLEDGE_BASE`,
+  `AGENT_RUNTIME`, más `PATH` y `PYTHONUNBUFFERED`. El `CMD` copia `AZURE_OPENAI_ENDPOINT` a `FOUNDRY_ENDPOINT`.
+- **Azure** (confirmado en `ca-agent-chat-10` con `az containerapp show ... --query "properties.template.containers[0].env[].name"`):
+  `APPLICATIONINSIGHTS_CONNECTION_STRING`, `AZURE_CLIENT_ID`, `AZURE_OPENAI_ENDPOINT`, `COSMOS_CONTAINER`, `COSMOS_DATABASE`,
+  `COSMOS_ENDPOINT`, `FOUNDRY_PROJECT_ENDPOINT`, `KEY_VAULT_URI`, `MCP_SCOPE`, `MCP_URL`, `SEARCH_ENDPOINT`, `SEARCH_INDEX` y `TEAM_ID`.
+  Son las 12 de `devops/DESPLIEGUE.md` más `FOUNDRY_PROJECT_ENDPOINT`.
+
+Ninguna es una api key ni una contraseña: son endpoints, nombres de recursos y el client id de la identidad administrada. La única
+que se parece a una clave es la connection string de Application Insights, que solo permite enviar telemetría, no leer datos.
+
+### Problemas que encontraste y cómo los resolviste
+
+- **El MCP compartido en frío.** En el primer intento (`call-904d5ee8`) aprobé sin reiniciar y la tool respondió
+  `El servicio del banco no responde`. Es un error de negocio y la acción aprobada no se reintenta. Repetí con el MCP ya despierto,
+  ahora reiniciando `uvicorn` entre el pedido y la aprobación, y salió `resultado:`.
+- **El modelo cuenta más de lo que pasó.** Con ese error dijo que la solicitud "quedó registrada para que el banco la procese", y
+  antes de llamar a la tool, cuando solo pedía confirmación, dijo "He registrado la solicitud". Es el mismo punto débil de
+  `DECISION_HEADER` que anoté en la sesión 8.
+- **`az login` en la laptop.** `az login` fallaba con `ConnectionResetError(10054)` al listar los tenants desde la red corporativa;
+  con `az login --tenant <id del tenant de la ficha>` entró directo a la suscripción del workshop.
+- **`.env` en otra copia del repo.** El clon de esta sesión no tenía `.env` (`Falta FOUNDRY_ENDPOINT`); copié el de la sesión 6
+  y pasé `COSMOS_ENDPOINT`, `COSMOS_DATABASE` y `COSMOS_CONTAINER` como variables de entorno al levantar `uvicorn`.
+
+- **Sin acceso a `upstream`.** Tomé `.github/workflows/deploy-agent.yaml` y `devops/` de la rama del capitán (`s9_AIE_20JG`) y
+  comprobé que son idénticos a los que trajo `s9_AIE_38DH`: es la copia del template, sin ediciones. `git status --short` mostró
+  lo esperado: `M deploy-agent.yaml`, `A devops/DESPLIEGUE.md`, `M devops/Dockerfile`.
+- **Golden sets saltados.** Los 5 tests de `test_golden_sets.py` piden el `evals.zip` de la plataforma (sesión 5), que no se
+  versiona. Por eso local da 139 passed, 5 skipped, y no los 144 passed de la guía.
+- **Docker detrás de un proxy con inspección TLS.** Construí las imágenes en un entorno cuya salida a internet pasa por un proxy
+  con su propio certificado. Usé una copia temporal del `Dockerfile` que solo agrega ese certificado al stage `base`; el
+  `Dockerfile` del repo no cambió.
+- **El agente en frío.** La primera llamada a `/health` del agente desplegado se cortó con `TimeoutError` a los 30 s: la
+  Container App había bajado a cero réplicas y el arranque (AI Search, MCP, Cosmos DB) tardó más. Al repetir respondió `ok`.
+- **El MCP compartido en frío, otra vez.** Contra Azure, la primera aprobación dio `El servicio del banco no responde`; la acción
+  aprobada no se reintenta, así que repetí el pedido y la segunda aprobación salió con `resultado:`.
+- **El modelo sigue contando mal el desenlace.** Con el `resultado:` ya en pantalla dijo que la solicitud "no fue aplicada", y con el
+  error dijo que "quedó registrada". Es el mismo punto débil de `DECISION_HEADER` de la sesión 8.
+- **`az` desde la red corporativa.** `az containerapp logs show` y `az containerapp show` fallaron con `ConnectionResetError(10054)`
+  en el handshake TLS; el chat contra la Container App sí funcionó desde la misma red.
+
+### Conclusión
+
+El historial y la acción pendiente pasan a Cosmos DB con otra implementación del puerto `ConversationStore`, sin tocar
+`ChatService`; los tests de la API siguen en memoria y nunca tocan Cosmos. La imagen de producción no trae `.env` ni `data/`: la
+imagen fija lo que no cambia entre entornos, Azure pone los endpoints y la identidad administrada, y sin AI Search la imagen se
+detiene en vez de arrancar a medias. En mi laptop una
+acción pendiente sobrevivió al reinicio de `uvicorn` y se aprobó en otro proceso; en Azure, el mismo agente respondió con `Fuentes:`
+y aprobó la acción de `support` usando solo la identidad administrada para AI Search y el MCP, sin ninguna api key. Cada merge a
+`main` despliega: el pipeline prueba, publica `team-10/agent:<sha>` y cambia solo la imagen de la Container App. Por indicación del
+profesor, este PR solo trae `RESULTS_AIE_16FL.md`.
