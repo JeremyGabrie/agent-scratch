@@ -370,3 +370,33 @@ Se verificó el acceso autenticado mediante Entra ID, el endpoint `/health`, la 
 También se comprobó la persistencia del estado pendiente en Cosmos DB después de reiniciar `uvicorn`. La primera operación posterior encontró el servicio bancario frío, por lo que se documentó esa incidencia sin asumir que la solicitud había sido aplicada.
 
 Las 144 pruebas locales y las validaciones del pipeline quedaron aprobadas. El trabajo de código se integró en `main`; queda pendiente el PR de resultados de esta sesión.
+## Sesión 10 — Trazas por turno y dashboard
+
+Equipo: `team-NN`. App Insights: `appi-team-NN`. Los cuatro casos contra el agente desplegado (paso 8).
+
+| Caso | `operation_Id` | Latencia (ms) | Tokens de entrada | Tokens de salida | Tools | Error | Observaciones |
+|---|---|---|---|---|---|---|---|
+| Saludo | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
+| Consulta con retrieval | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
+| Llamada a tool | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
+| Error controlado | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
+
+En **Observaciones**, una línea: lo que llamó la atención de la traza (qué se llevó el tiempo, la dependencia que falló, si el
+error permite ubicar el turno). En **Tools**, `—` si el turno no llamó ninguna.
+
+### Lo que dice el workbook
+
+| Panel | Lo que viste |
+|---|---|
+| Latencia p95 por intención | _(anotar)_ |
+| Tokens por turno | _(anotar)_ |
+| Dónde se va el tiempo de un turno | _(anotar)_ |
+| Tools con error | _(anotar)_ |
+
+### ¿Qué optimizarías primero y por qué?
+
+_(anotar)_
+
+### Conclusión
+
+_(anotar)_
