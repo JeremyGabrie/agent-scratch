@@ -207,3 +207,63 @@ el agente y las tools no cambiaron. Lo más lento es la primera respuesta: entre
 cada vuelta con tools es otra llamada a un modelo que razona. A mejorar: el compartido tuvo una falla
 pasajera del banco simulado, y la intención de las preguntas sin tool debería ser `out_of_scope` o
 `product_question`.
+
+## Sesión 7 — Skills, memoria de trabajo y Agent Framework
+
+Dominio: `support`. La misma conversación con los dos runtimes (paso 7), contra Foundry (`gpt-5-mini`),
+Azure AI Search (`idx-team-10`) y el MCP compartido. Skill `support`: `get_request_status`, `find_branches`,
+`update_contact_details`, `max_tool_rounds: 4`.
+
+Mensajes, en orden: "Soy CUS-1001, ¿dónde hay una agencia en Miraflores?" · "Soy CUS-1001, actualiza mi
+correo a ana.demo@example.com" · "Sí, confirmo el cambio" · "¿Cuál era la dirección de la agencia?" ·
+"¿Cuál es el saldo de mi cuenta de ahorros?" · "Bloquea mi tarjeta CRD-2001".
+
+| | `react` | `agent_framework` |
+|---|---|---|
+| Tools pedidas en la consulta | `find_branches(district=Miraflores)` | `find_branches(district=Miraflores, service=None)` |
+| La acción sensible quedó **NO SE EJECUTA** | Sí: `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com)` después del "Sí, confirmo"; el agente dijo que quedó pendiente de aprobación de un asesor | Sí: la misma tool, después del "Sí, confirmo"; "La solicitud quedó pendiente de aprobación por un asesor" |
+| Pregunta de memoria respondida sin `→` | Sí: "La dirección de la Agencia Miraflores es Calle Ficticia 456." | Sí: "La dirección de la Agencia Miraflores (BRN-02) es Calle Ficticia 456." |
+| Primer texto (ms) | 12920 (consulta) | 11428 (consulta) |
+| Respuesta completa (ms) | 13098 (consulta) | 11556 (consulta) |
+| Tokens (entrada / salida) | 2698 / 620 (consulta) | 2702 / 622 (consulta) |
+
+Los tiempos y tokens son del turno de la consulta. En el resto de la conversación los dos quedaron
+parecidos: acción confirmada 17499 / 17784 ms (`react`) y 17786 / 17935 ms (`agent_framework`); pregunta de
+memoria 13339 / 13383 ms y 11263 / 11449 ms.
+
+Primera corrida con `react`: el banco simulado detrás del MCP estaba en frío y `find_branches` respondió
+"El servicio del banco no responde; intenta de nuevo en unos minutos". Como ese turno no trajo datos, la
+pregunta de memoria volvió a pedir `find_branches` (lo que anticipa la guía en Problemas frecuentes). La
+tabla es de la segunda corrida, con el servicio ya despierto.
+
+### ¿La skill frenó la tool de otro dominio?
+
+Mensaje: "Bloquea mi tarjeta CRD-2001". Respuesta (`react`): "No puedo bloquear tarjetas desde este canal.
+Puede hacerlo desde la app (disponible 24/7), llamar a nuestra línea (01) 555-0200 — lun-sáb 8:00-20:00 — o
+acudir a una agencia." Con `agent_framework`, lo mismo. En ninguno de los dos hubo una línea `→`:
+`block_card` no está en la skill de `support` ni el MCP la muestra para ese dominio, así que el modelo no
+la tiene. Intención `out_of_scope`, sin inventar un bloqueo.
+
+### Diferencias entre los dos runtimes
+
+- **Comportamiento:** el mismo. Las mismas tools, la acción sensible NO SE EJECUTA en los dos, la memoria
+  de trabajo responde sin volver a consultar y el stream llega en pedazos (los eventos `→` antes del texto).
+- **Argumentos de la tool:** Agent Framework manda también los opcionales vacíos (`service=None`,
+  `phone=None`); el ciclo propio solo los que el modelo llenó. El MCP los acepta igual.
+- **Tiempo y tokens:** muy parecidos (diferencias de 1 a 2 s y de pocos tokens), porque los dos llaman al
+  mismo deployment de Foundry; lo que más pesa es que `gpt-5-mini` razona antes de escribir.
+- **Respuestas:** Agent Framework mencionó el código interno de la agencia (`BRN-02`); `react`, no. Es
+  variación del modelo, no del runtime.
+- **Confirmación antes de la acción:** con los dos, el modelo repitió el correo y pidió el "sí" antes de
+  pedir `update_contact_details`, como dice el paso 3 de la skill. En la sesión 6, sin skill, la pedía
+  apenas el cliente la mencionaba.
+
+### Conclusión
+
+Cambiar de runtime fue una línea del `.env` (`AGENT_RUNTIME`) y el agente se comportó igual: las reglas
+viven en `ChatService` (la skill, la lista blanca, `_run` con la aprobación) y el framework solo conduce el
+turno. La skill se notó en dos cosas: el modelo confirma el dato antes de la acción sensible y no ve tools
+de otros dominios. La memoria de trabajo permite responder "¿cuál era la dirección?" sin volver a llamar al
+MCP, pero depende de que el primer turno haya traído los datos: si la tool falló, el modelo vuelve a
+consultar. Queda `AGENT_RUNTIME=agent_framework` en el `.env` para la sesión 8. A mejorar: el banco detrás
+del MCP compartido tarda en despertar, y el primer mensaje del día puede fallar.
