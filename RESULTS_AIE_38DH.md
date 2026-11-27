@@ -355,13 +355,15 @@ Equipo: `team-10`. Dominio: `support`.
 |---|---|
 | Tests en el contenedor (paso 3) | `docker run --rm agent:test` → **139 passed, 5 skipped** (5.4 s). Los 5 skipped son los golden sets: `evals/` no entra en la imagen. En la laptop, `uv run pytest` → 144 passed. |
 | Acción aprobada después de reiniciar `uvicorn` (paso 2, Cosmos DB) | Sí. `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com)` quedó pendiente (`call-cd69cc26`). Detuve y levanté `uvicorn`, aprobé, y respondió **200 con `resultado:`**: el cliente `CUS-1001` con el correo nuevo. Hasta la sesión 8 esa decisión daba 404. El arranque dijo `Conversation store: Cosmos DB workshop/team-10`, y la consulta al contenedor mostró 2 sesiones de 7 mensajes cada una, con `pending: None`. |
-| Imagen desplegada (`team-10/agent:<sha>`) | Pendiente: el capitán todavía no hace el merge a `main`. `ca-agent-chat-10` sigue con la imagen inicial de plataforma (`mcr.microsoft.com/k8se/quickstart:latest`). |
-| Revisión activa y duración del job `deploy` | Pendiente del merge a `main`. Hoy: `ca-agent-chat-10--0000001`, `Running`, con la imagen inicial. |
-| `/health` del agente desplegado | Pendiente del despliegue. |
-| Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | Pendiente del despliegue. |
-| Acción aprobada contra Azure, con su `resultado:` | Pendiente del despliegue. |
+| Imagen desplegada (`team-10/agent:<sha>`) | `team-10/agent:0502ef3b36d2b076f33345b1ccf7a66ff340f3c0`, el merge `main <- equipo-10` (PR #40). |
+| Revisión activa y duración del job `deploy` | `ca-agent-chat-10--0000002`, `Healthy`. Job `test` en 44 s (139 passed, 5 skipped) y job `deploy` en 1 min 58 s. |
+| `/health` del agente desplegado | `Agente en https://ca-agent-chat-10.<...>.azurecontainerapps.io: ok`, con el token de mi `az login`. |
+| Respuesta con `Fuentes:` contra Azure (y su tiempo en ms) | "¿Qué necesito para abrir una cuenta de ahorros?" → `product_question` con 3 fuentes de `account-opening.md`. Primer texto en 4572 ms y respuesta completa en 4720 ms. |
+| Acción aprobada contra Azure, con su `resultado:` | `update_contact_details(customer_id=CUS-1001, email=ana.demo@example.com)` quedó `NO SE EJECUTA` (`call-8277355f`). Respondí `s` y apareció `resultado:` con el correo nuevo; `POST /chat/actions` dio 200. |
 
 La imagen de producción (paso 4) arrancó con `Foundry auth provider: entra_id` y se detuvo con `RuntimeError: KNOWLEDGE_BASE=azure_search requiere SEARCH_ENDPOINT y SEARCH_INDEX en .env.`, el fail-fast esperado sin Azure.
+
+En Azure, `az containerapp logs show` mostró el arranque con la identidad administrada: `Knowledge base: azure_search · ... (índice idx-team-10) · 28 chunks`, `Conversation store: Cosmos DB workshop/team-10`, `MCP: ... · 3 tools: get_request_status, find_branches, update_contact_details` y `Agent runtime: agent_framework`.
 
 ### Qué pone Azure y qué pone la imagen
 
@@ -375,8 +377,10 @@ Ninguna es una api key ni una contraseña: son endpoints, nombres de recursos y 
 - **El MCP compartido en frío.** En la primera prueba de reinicio, la acción aprobada respondió `El servicio del banco no responde`. La acción pendiente sí sobrevivió al reinicio; falló el banco. Como es una acción aprobada, no se reintentó. La repetí con el MCP ya despierto y salió `resultado:`.
 - **El modelo todavía cuenta mal el resultado.** Con ese error, el agente dijo que la solicitud "fue registrada". Es el mismo punto débil de `DECISION_HEADER` que anoté en la sesión 8.
 - **Probar Cosmos DB sin tocar `.env`.** Pasé `COSMOS_ENDPOINT`, `COSMOS_DATABASE` y `COSMOS_CONTAINER` como variables de entorno al levantar `uvicorn`: `pydantic-settings` las prefiere sobre `.env`.
-- **El agente en Azure no está desplegado todavía.** Los pasos 7 y 8 dependen del merge del capitán a `main`. Sin eso, la Container App sirve la imagen inicial y no hay agente con quien conversar.
+- **El despliegue esperó la integración del equipo.** Los pasos 7 y 8 dependían del merge del capitán a `main`, y ese PR tuvo conflictos. Hasta resolverlos, la Container App sirvió la imagen inicial de plataforma.
+- **El agente desplegado en frío.** La revisión estaba en `ScaledToZero`, y el primer `/health` superó los 30 s del chat (`TimeoutError: The read operation timed out`). Mientras tanto la réplica arrancó, y el segundo intento dio `ok`.
+- **El modelo cuenta mal el resultado también en Azure.** Después de aprobar, `resultado:` ya traía el correo nuevo, pero el agente dijo que el cambio "no ha sido aplicado aún". Es el mismo punto débil de la sesión 8.
 
 ### Conclusión
 
-El historial y la acción pendiente ya no viven en el proceso: una decisión del asesor llega aunque `uvicorn` se haya reiniciado entre el pedido y la aprobación. `CosmosConversationStore` es otra implementación del puerto `ConversationStore`, así que `ChatService` no cambió, y los tests de la API siguen en memoria. La imagen de producción no trae `.env` ni `data/`: Azure pone los endpoints y la identidad administrada, la imagen pone lo que no cambia entre entornos, y sin AI Search se detiene en vez de arrancar a medias. Falta ver el despliegue real: cuando el capitán haga el merge a `main`, completo la imagen, la revisión y las pruebas contra Azure.
+El historial y la acción pendiente ya no viven en el proceso: una decisión del asesor llega aunque `uvicorn` se haya reiniciado entre el pedido y la aprobación. `CosmosConversationStore` es otra implementación del puerto `ConversationStore`, así que `ChatService` no cambió, y los tests de la API siguen en memoria. La imagen de producción no trae `.env` ni `data/`: Azure pone los endpoints y la identidad administrada, la imagen pone lo que no cambia entre entornos, y sin AI Search se detiene en vez de arrancar a medias. En Azure, el merge a `main` corrió los tests, publicó la imagen y creó una revisión nueva sin tocar a mano la Container App. El mismo chat de la laptop, con un token de mi `az login`, obtuvo `Fuentes:` de AI Search y aprobó la acción en el MCP. Las dos cosas las hizo la identidad administrada, sin una sola api key.

@@ -14,6 +14,8 @@ Un agente que atiende a los clientes del banco por consola y por API:
 
 Dominios: `fraud`, `fees`, `cards`, `loans` y `support` (variable `DOMAIN`).
 
+Despliegue en Azure con GitHub Actions: [devops/DESPLIEGUE.md](devops/DESPLIEGUE.md).
+
 ## En qué va
 
 | Versión | Qué hace el agente | Estado |

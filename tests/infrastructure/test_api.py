@@ -141,6 +141,7 @@ def test_chat_stream_sends_each_tool_before_the_answer():
     assert events[2][1]["status"] == "ok"
     assert events[-1][0] == "end" and events[-1][1]["tools"][0]["status"] == "ok"
 
+
 REFUND = ToolCall(id="call-2", name="request_fee_refund", arguments={"fee_id": "FEE-4002", "reason": "cobro indebido"})
 
 
