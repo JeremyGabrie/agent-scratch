@@ -372,31 +372,32 @@ También se comprobó la persistencia del estado pendiente en Cosmos DB después
 Las 144 pruebas locales y las validaciones del pipeline quedaron aprobadas. El trabajo de código se integró en `main`; queda pendiente el PR de resultados de esta sesión.
 ## Sesión 10 — Trazas por turno y dashboard
 
-Equipo: `team-NN`. App Insights: `appi-team-NN`. Los cuatro casos contra el agente desplegado (paso 8).
+Equipo: `team-10`. App Insights: `appi-team-10`. Los cuatro casos contra el agente desplegado (paso 8).
 
 | Caso | `operation_Id` | Latencia (ms) | Tokens de entrada | Tokens de salida | Tools | Error | Observaciones |
-|---|---|---|---|---|---|---|---|
-| Saludo | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
-| Consulta con retrieval | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
-| Llamada a tool | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
-| Error controlado | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ | _(anotar)_ |
+|---|---|---:|---:|---:|---|---|---|
+| Saludo | `153b8337938daa5ab1f3939559301a73` | 4328 | 1290 | 337 | — | No | Turno `greeting`; respondió sin invocar tools. |
+| Consulta con retrieval | `8fd193c8235632adf3535240c7be6575` | 11650 | 1585 | 1365 | Retrieval | No | Turno `product_question`; recuperó fuentes del corpus y respondió con referencias. |
+| Llamada a tool | `13646f4050722f8d20369a6887d4c4d3` | 26887 | 3494 | 1748 | `get_request_status` | Sí | La tool tardó 10058 ms y falló porque el servicio bancario no respondió. |
+| Error controlado | `36175496407f2a22945aee7db477ef99` | 159* | N/D | N/D | — | Sí: `not_found` | Evento `chat.decision` de una acción inexistente; quedó identificado por `operation_Id`, no es un `chat.turn`. |
 
-En **Observaciones**, una línea: lo que llamó la atención de la traza (qué se llevó el tiempo, la dependencia que falló, si el
-error permite ubicar el turno). En **Tools**, `—` si el turno no llamó ninguna.
+En **Observaciones**, una línea: lo que llamó la atención de la traza (qué se llevó el tiempo, la dependencia que falló, si el error permite ubicar el turno). En **Tools**, `—` si el turno no llamó ninguna.
+
+*Los 159 ms del error controlado corresponden al evento `chat.decision`, no a la latencia de un turno conversacional. Por eso no se comparan directamente con las latencias de `chat.turn`.*
 
 ### Lo que dice el workbook
 
 | Panel | Lo que viste |
 |---|---|
-| Latencia p95 por intención | _(anotar)_ |
-| Tokens por turno | _(anotar)_ |
-| Dónde se va el tiempo de un turno | _(anotar)_ |
-| Tools con error | _(anotar)_ |
+| Latencia p95 por intención | `data_query`: 26887 ms (1 turno); `sensitive_action`: 18683 ms (3 turnos); `product_question`: 11650 ms (1 turno); `greeting`: 4328 ms (1 turno). |
+| Tokens por turno | El panel muestra 8 turnos, 18.4 millones de tokens de entrada y 9.46 millones de salida; también muestra 7.79 millones en `tokens_por_turno` y 4 en `llm_por_turno`. Las cifras agregadas en millones no coinciden con los tokens individuales de las trazas, por lo que deben revisarse antes de usarlas como consumo real. |
+| Dónde se va el tiempo de un turno | Foundry - chat concentra 77835 ms acumulados (14 llamadas; p95 8895 ms); MCP, 10116 ms (5 llamadas; p95 10019 ms); Foundry - embeddings, 1334 ms; AI Search, 965 ms; Cosmos DB, 725 ms; otros, 430 ms. |
+| Tools con error | `get_request_status`: 1 llamada con error, p95 10058 ms. `update_contact_details`: 1 llamada `ok` (106 ms) y 1 `pending_approval` (4 ms). |
 
 ### ¿Qué optimizarías primero y por qué?
 
-_(anotar)_
+Primero optimizaría las llamadas a Foundry - chat, que acumulan el mayor tiempo entre las dependencias observadas. También revisaría la disponibilidad y los tiempos de respuesta del servicio bancario usado por `get_request_status`, porque la dependencia falló después de aproximadamente 10 segundos. Antes de tomar decisiones sobre costos, corregiría o validaría la consulta del panel de tokens, ya que sus totales en millones no concuerdan con los consumos individuales registrados.
 
 ### Conclusión
 
-_(anotar)_
+La instrumentación permitió observar las latencias por intención, el consumo de tokens, las dependencias y los errores del agente desplegado. El saludo fue el turno más rápido (4328 ms), mientras que la consulta con `get_request_status` registró la mayor latencia (26887 ms) y evidenció un fallo del servicio bancario. El error controlado `not_found` también quedó registrado y puede localizarse mediante su `operation_Id`, aunque corresponde a un evento `chat.decision` y no a un turno conversacional. El Workbook facilita identificar dónde se concentra el tiempo y qué tools fallan; queda pendiente validar la agregación de tokens antes de utilizarla como métrica de consumo.
